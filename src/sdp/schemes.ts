@@ -45,7 +45,7 @@ export const SCHEMES: SchemeFacts[] = [
     realT: 64,
     posture: 'resistant',
     blurb:
-      'Decodes a high-weight error (t = 64 flips in a length-3488 code). The support is a large set, so a few leaked coordinates remove only a small fraction of the search — hints erode security slowly.',
+      'Real McEliece decodes a fixed-weight error of t = 64 in a length-3488 code (relative weight ≈ 1.8%). This toy stands in for the HIGHER-weight end of the mechanism (w = 6): a heavier error needs more support hints before its search collapses.',
     toy: { n: 22, k: 10, w: 6, seed: 0x11ce },
   },
   {
@@ -56,7 +56,7 @@ export const SCHEMES: SchemeFacts[] = [
     realT: 66,
     posture: 'fragile',
     blurb:
-      'Decodes a low-weight error relative to its long length. Its support is a tiny fraction of the codeword, so each leaked coordinate is a big share of the whole secret — few hints push it toward polynomial time.',
+      'Real HQC decodes a low-weight error (t = 66 in a length-17669 code, relative weight ≈ 0.37%). This toy stands in for the LOWER-weight end of the mechanism (w = 3): a lighter error reaches polynomial time after fewer support hints.',
     toy: { n: 26, k: 18, w: 3, seed: 0x4c },
   },
 ];

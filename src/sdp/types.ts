@@ -58,8 +58,9 @@ export interface AttackResult {
   /** Iterations the randomized search actually took. This is measured work. */
   iterations: number;
   /**
-   * GF(2) row-combine operations the run actually performed — the unit shared
-   * with the Stern solver, so the two algorithms' costs are directly comparable.
+   * Elementary operations the run actually performed (GF(2) row-combines plus
+   * candidate tests, and for Stern collision-list entries) — the shared ledger
+   * unit, so the two algorithms' costs sit on one comparable axis.
    */
   work: number;
   /** True once we checked H·recovered = s and weight ≤ w. */

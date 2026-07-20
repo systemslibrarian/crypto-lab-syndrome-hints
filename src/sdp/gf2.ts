@@ -4,7 +4,7 @@
 // This is hand-rolled on purpose (Principle 1: the primitive that *is* the
 // teaching subject is transparent, not hidden in a library). Vectors and
 // matrices hold 0/1 bytes so a learner can print and read them; all math is
-// mod 2 (XOR = addition, AND = multiplication). Sizes here are tiny (n <= ~32),
+// mod 2 (XOR = addition, AND = multiplication). Sizes here are tiny (n <= ~64),
 // so byte arrays are plenty fast and stay legible.
 // ---------------------------------------------------------------------------
 
@@ -63,9 +63,12 @@ export function matVec(H: Mat, e: Vec): Vec {
 }
 
 /**
- * A shared work counter. Both solvers increment it once per GF(2) row-combine
- * (and per candidate test), so Prange and Stern report cost in the same unit and
- * their measured work factors are directly comparable.
+ * A shared operation ledger. Both solvers increment it on comparable elementary
+ * steps — GF(2) row-combines during elimination, plus each candidate error the
+ * search tests (and, for Stern, each collision-list entry it builds). It is a
+ * single "elementary operations" tally, not a pure row-combine count; it lets
+ * the two decoders' measured work be compared on one axis. The modelled curves
+ * use the same ledger, so measured points sit near (not exactly on) them.
  */
 export interface OpCounter {
   ops: number;

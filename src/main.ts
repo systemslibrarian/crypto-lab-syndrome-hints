@@ -9,7 +9,6 @@ import { runStern } from './sdp/stern';
 import type { AttackResult, Instance, PerfectHint } from './sdp/types';
 import {
   searchExponentBits,
-  polyFloorBits,
   elimOps,
   prangeWorkBits,
   sternWorkBits,
@@ -78,7 +77,9 @@ function measureAndStore(algo: Algo, count: number): number {
   const trials = 4;
   for (let seed = 1; seed <= trials; seed++) total += runSolver(algo, count, seed).work;
   const bits = Math.log2(Math.max(1, total / trials));
-  measured[algo].set(count, bits);
+  // At full hints the hints alone solve it — no search runs — so there is no
+  // measured search work to compare against the model floor. Don't plot a dot.
+  if (MAIN.w - count > 0) measured[algo].set(count, bits);
   return bits;
 }
 
@@ -316,7 +317,7 @@ function sectionAttack(): HTMLElement {
             el('strong', {}, [`Security broken for this instance.`]),
             document.createTextNode(
               ` ${res.iterations.toLocaleString()} permutation${res.iterations === 1 ? '' : 's'}, ` +
-                `${res.work.toLocaleString()} GF(2) ops (${bitsToWork(Math.log2(Math.max(1, res.work)))}).` +
+                `${res.work.toLocaleString()} elementary ops (${bitsToWork(Math.log2(Math.max(1, res.work)))}).` +
                 (sternParams && sternParams.p > 0
                   ? ` Stern ran a birthday search with p=${sternParams.p}, ℓ=${sternParams.l}.`
                   : ''),
@@ -427,7 +428,9 @@ function sectionAttack(): HTMLElement {
     el('p', { class: 'lede' }, [
       'A ',
       el('strong', {}, ['perfect hint']),
-      ' (the fault model of Cayrel et al., Eurocrypt ’21) leaks one exact coordinate of the secret error. Choose which real solver to run — ',
+      ' here leaks one exact coordinate of the secret error — a deliberately strong, simplified form of fault leakage (in the spirit of Cayrel et al., Eurocrypt ’21). ',
+      el('span', { class: 'tag tag-model' }, ['Adapted']),
+      ' The paper’s hint channel is more general; this demo uses direct support-coordinate reveals so the effect is easy to see. Choose which real solver to run — ',
       el('strong', {}, ['Prange']),
       ' (', el('code', {}, ['src/sdp/isd.ts']), ') or ',
       el('strong', {}, ['Stern']),
@@ -450,9 +453,9 @@ function sectionAttack(): HTMLElement {
     el('p', { class: 'footnote' }, [
       'The slider leaks the ',
       el('em', {}, ['informative']),
-      ` case — coordinates that are actually part of the support. Revealing the whole weight-${MAIN.w} support (${MAIN.w} hints) leaves nothing to search, which is the crisp `,
-      el('strong', {}, ['hint-count-to-polynomial bound: ≈ w hints']),
-      '. Faults that land on zeros help less; the paper handles the general case.',
+      ` case — coordinates that are actually part of the support. Revealing the whole weight-${MAIN.w} support (${MAIN.w} hints) leaves nothing to search, the crisp `,
+      el('strong', {}, ['hint-count-to-polynomial bound of this support-leakage model: ≈ w hints']),
+      '. This is this demo’s bound, not a verbatim restatement of the paper’s general result; faults that land on zeros help less, and the paper handles the general hint channel.',
     ]),
   ]);
 }
@@ -460,7 +463,7 @@ function sectionAttack(): HTMLElement {
 function sectionCurve(): HTMLElement {
   const chartHost = el('figure', { class: 'chart-wrap', role: 'group', 'aria-label': 'Work-factor curves' });
   const chartCap = el('figcaption', { class: 'chart-cap', id: 'work-chart-cap' }, [
-    'Total attack work (log₂ GF(2) operations) versus perfect hints leaked, for both real algorithms. The upper line is Prange, the lower line is Stern — the vertical gap between them is the algorithm advantage, and both fall toward the polynomial floor (dashed) as hints add up. Dots are the average of real runs you launched; the vertical line marks the current hint count.',
+    'Total attack work (log₂ of the elementary-operation ledger) versus perfect hints leaked, for both real algorithms. The upper line is Prange, the lower line is Stern — the vertical gap between them is the algorithm advantage, and both fall toward the polynomial floor (dashed) as hints add up. Dots are the average of real runs you launched; the vertical line marks the current hint count.',
   ]);
   const chartDesc = el('p', { class: 'visually-hidden', id: 'work-chart-desc', role: 'status', 'aria-live': 'polite' });
 
@@ -633,7 +636,7 @@ function sectionCompare(): HTMLElement {
           scheme.name,
           document.createTextNode(' '),
           el('span', { class: `pill pill-${scheme.posture}` }, [
-            scheme.posture === 'fragile' ? '⚠️ fragile' : '🛡️ resistant',
+            scheme.posture === 'fragile' ? '↓ fewer hints (toy)' : '↑ more hints (toy)',
           ]),
         ]),
         el('p', { class: 'scheme-stat' }, [`real: ${scheme.realParams}`]),
@@ -650,22 +653,25 @@ function sectionCompare(): HTMLElement {
   }
 
   return el('section', { class: 'card', 'aria-labelledby': 'compare-h' }, [
-    el('p', { class: 'eyebrow' }, [el('span', { class: 'step-num' }, ['4']), 'Why weight decides fragility']),
-    el('h2', { id: 'compare-h' }, ['Classic McEliece vs HQC — the error-weight finding']),
+    el('p', { class: 'eyebrow' }, [el('span', { class: 'step-num' }, ['4']), 'How error weight drives hint-fragility']),
+    el('h2', { id: 'compare-h' }, ['The error-weight mechanism, on two toys']),
     el('p', { class: 'lede' }, [
-      'Both schemes rest on syndrome decoding, but they live at opposite ends of the ',
-      el('strong', {}, ['error-weight']),
-      ' axis. McEliece decodes a high-weight error, so its support is a big set and each leaked coordinate barely dents the search. HQC decodes a low-weight error, so a handful of leaked coordinates is a large share of the whole secret. Fewer hints push the low-weight scheme to polynomial time — that is the paper’s finding, and you can run both toys to see it.',
+      'The general mechanism the paper builds on: ',
+      el('strong', {}, ['a lower-weight error reaches polynomial time after fewer support hints']),
+      '. These two toys are set at different weights (w = 6 vs w = 3) to show exactly that — run both and compare their hints-to-polynomial counts. They illustrate the mechanism; they are ',
+      el('strong', {}, ['not scaled models']),
+      ' of the real schemes.',
     ]),
     grid,
     el('p', { class: 'footnote' }, [
-      'The large ',
+      el('span', { class: 'tag tag-model' }, ['Adapted']),
+      ' The real ',
       el('code', {}, ['n']),
       ' and ',
       el('code', {}, ['t']),
-      ' are the real Level-1 parameters, quoted as facts; only the small ',
-      el('strong', {}, ['toy']),
-      ' instances actually run in your browser. They share each scheme’s high-vs-low-weight shape, so the contrast is honest even though the magnitudes are not the real ones.',
+      ' are quoted Level-1 facts. Note the real schemes have similar ',
+      el('em', {}, ['absolute']),
+      ' error weight (t ≈ 64 and 66); they differ in relative weight (t/n ≈ 1.8% vs 0.37%) and structure. Which scheme the paper judges more hint-sensitive follows from its full analysis, which this browser demo does not reproduce — changing the toy weights changes only the toys, not any real-scheme claim.',
     ]),
   ]);
 }
@@ -702,7 +708,7 @@ function sectionReference(): HTMLElement {
           ]),
           el('p', {}, [
             'Total work multiplies that by a per-permutation Gaussian-elimination cost (≈ r² row-combines, the ',
-            el('code', {}, [fmtBits(polyFloorBits(MAIN.r))]),
+            el('code', {}, [fmtBits(Math.log2(elimOps(MAIN.r)))]),
             ' polynomial floor). Prange pays it once per single-candidate test; ',
             el('strong', {}, ['Stern']),
             ' amortises it over a birthday/collision search of the information set:',
@@ -717,7 +723,7 @@ function sectionReference(): HTMLElement {
               el('code', {}, [bitsToWork(prangeWorkBits({ n: MAIN.n, r: MAIN.r, w: MAIN.w }))]),
               ' for Prange versus ',
               el('code', {}, [bitsToWork(sternWorkBits({ n: MAIN.n, r: MAIN.r, w: MAIN.w }))]),
-              ' for Stern — the gap you see on the chart. Both are counted in the same GF(2) row-combine unit, and the real solvers count the same operations, so the measured dots land near the modelled curves. ',
+              ' for Stern — the gap you see on the chart. Both curves and the real solvers count the same elementary-operation ledger (row-combines, candidate tests, and Stern list entries), so the measured dots land near — not exactly on — the modelled curves. ',
               el('span', { class: 'muted' }, ['(MMT and BJMM would lower the Stern line further; they are named, not implemented.)']),
             ]);
           })(),
@@ -797,7 +803,7 @@ function sectionGaps(): HTMLElement {
       el('li', {}, ['Not production crypto — a teaching demo. It runs no real McEliece/HQC key recovery (browser-infeasible); it attacks small but genuine F₂ instances.']),
       el('li', {}, [el('span', { class: 'tag tag-real' }, ['Real']), ' The instances, the syndromes, and both perfect-hint ISD attacks — Prange and Stern — are executed and verified (H·e = s). Only these two algorithms are implemented.']),
       el('li', {}, [el('span', { class: 'tag tag-model' }, ['Model']), ' The work-factor curves (Prange and Stern expectations) and the approximate-hint discount: transparent formulas, labelled where shown. MMT and BJMM are named as further refinements but are NOT implemented.']),
-      el('li', {}, ['The slider leaks the informative (support) coordinates; general faults help less, so treat the “≈ w hints” bound as the best case.']),
+      el('li', {}, [el('span', { class: 'tag tag-model' }, ['Adapted']), ' A perfect hint here is a direct support-coordinate reveal — a strong, simplified stand-in for the paper’s more general hint channel. The slider leaks the informative (support) coordinates, so the “≈ w hints to polynomial” bound is this model’s best case, not a verbatim restatement of the paper’s general result.']),
       el('li', {}, ['Both algorithms recover the error vector e. Neither produces a decryption forgery or a full key recovery, and the demo does not model the physical acquisition that produces hints.']),
     ]),
   ]);

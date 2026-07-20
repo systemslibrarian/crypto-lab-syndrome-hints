@@ -19,10 +19,17 @@ BJMM) cost exponential time.
 
 The **Hint-ISD** result (D'Achille, Esser, Kraus, ePrint 2026/341, building on
 Cayrel et al. Eurocrypt '21 and ISD-with-Hints ePrint 2021/279) asks what happens
-when the secret error partially leaks — through a **fault** (an exact coordinate)
-or a **side channel** (a noisy Hamming weight). Each leaked hint turns the problem
-into **soft-decision decoding**, and the work factor slides smoothly from
-exponential toward polynomial.
+when the secret error partially leaks — through a **fault** or a **side channel**.
+Each leaked hint turns the problem into **soft-decision decoding**, and the work
+factor slides smoothly from exponential toward polynomial.
+
+> **Scope note (Adapted).** This demo models a perfect hint as a direct
+> **support-coordinate reveal** (an exact leaked `e_i`) and an approximate hint as
+> a noisy block-weight meter. Those are deliberately strong, simplified stand-ins
+> chosen so the effect is easy to see and run; the paper's hint channel is more
+> general. Treat the "≈ w hints to polynomial" bound and the McEliece-vs-HQC
+> panel as illustrations of the *mechanism*, not verbatim reproductions of the
+> paper's quantitative results.
 
 The best-known classical attacks form the **ISD family** — of which **Prange**
 and **Stern** are implemented here as two selectable real solvers, while **MMT**
@@ -119,7 +126,7 @@ npm run test:a11y  # axe-core WCAG gate on the production build, both themes
 
 ## Build & Verify
 
-- **Unit tests:** 46 Vitest tests across `src/sdp/*.test.ts`, run in CI before every
+- **Unit tests:** 47 Vitest tests across `src/sdp/*.test.ts`, run in CI before every
   deploy. This includes **16 spec known-answer tests** for the [7,4] Hamming code:
   9 syndrome KATs (`src/sdp/instance.test.ts`) — every single-bit error has syndrome
   equal to its position's binary value, plus zero-syndrome and XOR-linearity — and
@@ -144,9 +151,9 @@ npm run test:a11y  # axe-core WCAG gate on the production build, both themes
 ## Performance
 
 The instance is an honestly-labelled toy (`n = 48`, `w = 10`) — sized so Prange
-visibly struggles where Stern does not, yet both real solvers finish in
-milliseconds. The chart and comparison attacks each complete in well under a
-frame. All computation is in the browser — no backend, no network calls.
+visibly struggles where Stern does not, yet both real solvers finish in a few
+milliseconds on a desktop browser. All computation is in the browser — no
+backend, no network calls.
 
 ---
 
