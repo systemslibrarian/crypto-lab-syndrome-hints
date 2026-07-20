@@ -40,39 +40,49 @@ async function openAllDetails(page: Page): Promise<void> {
   });
 }
 
-async function driveDemo(page: Page): Promise<void> {
-  // Primer: flip a couple of candidate bits, then reveal the true error.
-  const primerBits = page.locator('.bit-row').first().locator('button.bit');
-  await primerBits.nth(0).click();
-  await primerBits.nth(3).click();
-  await page.getByRole('button', { name: /reveal the true error/i }).click();
+async function setSlider(page: Page, id: string, value: string): Promise<void> {
+  const slider = page.locator(id);
+  await slider.fill(value);
+  await slider.dispatchEvent('input');
+}
 
+async function driveDemo(page: Page): Promise<void> {
   const runBtn = page.getByRole('button', { name: /run the real isd attack/i });
 
-  // Exercise BOTH real solvers so each result region is in the DOM when axe
-  // runs. Stern first (at a few hints), then Prange (at more hints). Running at
-  // a mid-to-high hint count keeps each real decode fast on the CI runner.
+  // Exercise BOTH real solvers so each result state is in the DOM when axe runs.
   await page.check('#algo-stern');
-  await page.locator('#hint-slider').fill('4');
-  await page.locator('#hint-slider').dispatchEvent('input');
+  await setSlider(page, '#hint-slider', '4');
   await runBtn.click();
   await expect(page.locator('.result-region .meter-badge')).toBeVisible();
 
   await page.check('#algo-prange');
-  await page.locator('#hint-slider').fill('6');
-  await page.locator('#hint-slider').dispatchEvent('input');
+  await setSlider(page, '#hint-slider', '6');
   await runBtn.click();
 
-  // Push both hint sliders to their maximum so the BROKEN/polynomial meter
-  // state and the collapsed chart render, then run once more at the floor.
+  // Attacker view -> planted truth, so both error-row states get scanned.
+  await page.getByRole('button', { name: /show planted truth/i }).click();
+
+  // Run both algorithms at once (renders the comparative result + table rows).
+  await page.getByRole('button', { name: /run both algorithms/i }).click();
+  await expect(page.locator('#run-body tr').first()).toBeVisible();
+
+  // Push both hint sliders to the maximum so the BROKEN/polynomial meter state
+  // and the collapsed chart render, then run once more at the floor.
   for (const id of ['#hint-slider', '#hint-slider-2']) {
-    const slider = page.locator(id);
-    const max = (await slider.getAttribute('max')) ?? '10';
-    await slider.fill(max);
-    await slider.dispatchEvent('input');
+    const max = (await page.locator(id).getAttribute('max')) ?? '10';
+    await setSlider(page, id, max);
   }
   await expect(page.locator('.meter-badge.state-broken').first()).toBeVisible();
   await runBtn.click();
+
+  // Reveal collapsed content (chart data table, hand-decode, explainers, refs).
+  await openAllDetails(page);
+
+  // Primer hand-decode (now inside a details): flip a couple of bits + reveal.
+  const primerBits = page.locator('.hand-decode button.bit');
+  await primerBits.nth(0).click();
+  await primerBits.nth(3).click();
+  await page.getByRole('button', { name: /reveal the true error/i }).click();
 
   // Both McEliece-vs-HQC comparison attacks.
   for (const b of await page.getByRole('button', { name: /run isd on the/i }).all()) {
@@ -80,11 +90,8 @@ async function driveDemo(page: Page): Promise<void> {
   }
 
   // Exercise the approximate-hint noise slider (drives its live readout).
-  const noise = page.locator('#noise-slider');
-  await noise.fill('0');
-  await noise.dispatchEvent('input');
-  await noise.fill('20');
-  await noise.dispatchEvent('input');
+  await setSlider(page, '#noise-slider', '0');
+  await setSlider(page, '#noise-slider', '20');
 
   await page.waitForTimeout(200);
 }

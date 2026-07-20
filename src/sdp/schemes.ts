@@ -22,6 +22,8 @@ export interface SchemeFacts {
   name: string;
   /** Real Level-1 parameter set this scheme is contextualised against. */
   realParams: string;
+  /** Primary source for the real parameters. */
+  sourceUrl: string;
   /** Real code length n (fact, not run in-browser). */
   realN: number;
   /** Real decoding error weight t (fact). Drives the fragility contrast. */
@@ -41,6 +43,7 @@ export const SCHEMES: SchemeFacts[] = [
     id: 'mceliece',
     name: 'Classic McEliece',
     realParams: 'mceliece348864 (NIST Level 1)',
+    sourceUrl: 'https://classic.mceliece.org/',
     realN: 3488,
     realT: 64,
     posture: 'resistant',
@@ -52,6 +55,7 @@ export const SCHEMES: SchemeFacts[] = [
     id: 'hqc',
     name: 'HQC',
     realParams: 'hqc-128 (NIST Level 1)',
+    sourceUrl: 'https://pqc-hqc.org/',
     realN: 17_669,
     realT: 66,
     posture: 'fragile',

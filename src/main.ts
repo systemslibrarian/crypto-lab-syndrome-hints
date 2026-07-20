@@ -19,12 +19,14 @@ import {
 import { SCHEMES, schemeContrast } from './sdp/schemes';
 
 // ---------------------------------------------------------------------------
-// The single interactive SDP instance the main panels attack. Sized up to
-// n=48, w=10 (an honestly-labelled toy) so Prange visibly struggles where Stern
-// does not — the comparison only teaches if the gap is real. Still a genuine
-// H·e = s instance over F_2, decoded live in the browser by both real solvers.
+// The single interactive SDP instance the main panels attack. Sized at the
+// Gilbert–Varshamov bound (n=64, k=24, w=11): the planted weight-11 error is
+// essentially the UNIQUE low-weight solution, so the unique-solution work model
+// is honest and the measured medians land within ~1 bit of it. Prange visibly
+// struggles (~2^8 information sets) where Stern's birthday search does not.
+// A genuine H·e = s instance over F_2, decoded live by both real solvers.
 // ---------------------------------------------------------------------------
-const MAIN: Instance = makeInstance({ n: 48, k: 24, w: 10, seed: 0x5a1d });
+const MAIN: Instance = makeInstance({ n: 64, k: 24, w: 11, seed: 0xa11 });
 const SUPPORT: number[] = Array.from(MAIN.e).flatMap((b, i) => (b ? [i] : []));
 
 type Algo = 'prange' | 'stern';
@@ -67,20 +69,77 @@ function runSolver(algo: Algo, count: number, seed: number): AttackResult {
   return algo === 'stern' ? runStern(MAIN, hints, { seed }) : runAttack(MAIN, hints, { seed });
 }
 
+const TRIALS = 15; // enough distinct seeds to report a stable median + interval
+
+function quantile(sorted: number[], q: number): number {
+  const i = Math.min(sorted.length - 1, Math.max(0, Math.round(q * (sorted.length - 1))));
+  return sorted[i];
+}
+
+interface RunRecord {
+  id: number;
+  algo: Algo;
+  hints: number;
+  residualN: number;
+  residualW: number;
+  trials: number;
+  medianBits: number;
+  p10Bits: number;
+  p90Bits: number;
+  medianIters: number;
+  verified: boolean;
+  /** One genuine recovered error vector (verified) to display. */
+  sample: AttackResult;
+}
+
+const runLog: RunRecord[] = [];
+let runCounter = 0;
+
 /**
- * Average the measured work (log2 ops) of a few genuine runs of `algo` at
- * `count` hints — genuine, just stabilised against the geometric variance of a
- * single randomized run. Stores the point so the chart can plot it.
+ * Run `TRIALS` genuine, distinctly-seeded attacks and summarise them with a
+ * median and a p10–p90 interval — honest about the geometric spread of a
+ * randomized search instead of hiding it behind a single mean. Records the run
+ * and (unless the hints alone already solve it) plots the median on the chart.
  */
-function measureAndStore(algo: Algo, count: number): number {
-  let total = 0;
-  const trials = 4;
-  for (let seed = 1; seed <= trials; seed++) total += runSolver(algo, count, seed).work;
-  const bits = Math.log2(Math.max(1, total / trials));
-  // At full hints the hints alone solve it — no search runs — so there is no
-  // measured search work to compare against the model floor. Don't plot a dot.
-  if (MAIN.w - count > 0) measured[algo].set(count, bits);
-  return bits;
+function runExperiment(algo: Algo, count: number): RunRecord {
+  const works: number[] = [];
+  const iters: number[] = [];
+  let verified = true;
+  let sample = runSolver(algo, count, 1);
+  for (let seed = 1; seed <= TRIALS; seed++) {
+    const r = runSolver(algo, count, seed);
+    if (seed === 1) sample = r;
+    works.push(r.work);
+    iters.push(r.iterations);
+    verified = verified && r.solved && r.verified;
+  }
+  works.sort((a, b) => a - b);
+  iters.sort((a, b) => a - b);
+  const toBits = (v: number) => Math.log2(Math.max(1, v));
+  const rec: RunRecord = {
+    id: ++runCounter,
+    algo,
+    hints: count,
+    residualN: sample.reduced.n,
+    residualW: sample.reduced.w,
+    trials: TRIALS,
+    medianBits: toBits(quantile(works, 0.5)),
+    p10Bits: toBits(quantile(works, 0.1)),
+    p90Bits: toBits(quantile(works, 0.9)),
+    medianIters: quantile(iters, 0.5),
+    verified,
+    sample,
+  };
+  runLog.unshift(rec); // newest first
+  if (MAIN.w - count > 0) measured[algo].set(count, rec.medianBits);
+  return rec;
+}
+
+function resetRuns() {
+  runLog.length = 0;
+  measured.prange.clear();
+  measured.stern.clear();
+  notify();
 }
 
 interface WorkPoint {
@@ -202,10 +261,10 @@ function sectionPrimer(): HTMLElement {
   refresh();
 
   return el('section', { class: 'card', 'aria-labelledby': 'primer-h' }, [
-    el('p', { class: 'eyebrow' }, [el('span', { class: 'step-num' }, ['1']), 'See the problem']),
+    el('p', { class: 'eyebrow' }, [el('span', { class: 'step-num' }, ['3']), 'Inspect the instance']),
     el('h2', { id: 'primer-h' }, ['The syndrome-decoding instance, for real']),
     el('p', { class: 'lede' }, [
-      'Here is a genuine instance over F₂: a public parity-check matrix ',
+      'This is the very instance the attack above ran on — a genuine one over F₂: a public parity-check matrix ',
       el('code', {}, ['H']),
       ` (${MAIN.r}×${MAIN.n}) and a syndrome `,
       el('code', {}, ['s']),
@@ -222,19 +281,21 @@ function sectionPrimer(): HTMLElement {
       el('code', {}, ['1']),
       ' means that position feeds that parity check.',
     ]),
-    el('h3', {}, ['Try to decode it by hand']),
-    el('p', { class: 'prose' }, [
-      'Flip positions to build a candidate ',
-      el('code', {}, ['e']),
-      ', and the demo computes ',
-      el('code', {}, ['H·e']),
-      ' and compares it, bit for bit, against ',
-      el('code', {}, ['s']),
-      `. Finding the weight-${MAIN.w} match by guessing is exactly the hard search the attacker faces — go ahead and feel how hard it is.`,
+    el('details', { class: 'hand-decode' }, [
+      el('summary', {}, ['Try to decode it by hand (48 toggles)']),
+      el('p', { class: 'prose' }, [
+        'Flip positions to build a candidate ',
+        el('code', {}, ['e']),
+        ', and the demo computes ',
+        el('code', {}, ['H·e']),
+        ' and compares it, bit for bit, against ',
+        el('code', {}, ['s']),
+        `. Finding the weight-${MAIN.w} match by guessing is exactly the hard search the attacker faces — go ahead and feel how hard it is.`,
+      ]),
+      bitRow,
+      el('div', { class: 'btn-row' }, [clearBtn, revealBtn]),
+      cmp,
     ]),
-    bitRow,
-    el('div', { class: 'btn-row' }, [clearBtn, revealBtn]),
-    cmp,
   ]);
 }
 
@@ -274,6 +335,8 @@ function algorithmSelector(): HTMLElement {
 }
 
 function sectionAttack(): HTMLElement {
+  let revealTruth = false; // default: show only what the ATTACKER knows
+
   const slider = el('input', {
     type: 'range',
     id: 'hint-slider',
@@ -283,94 +346,182 @@ function sectionAttack(): HTMLElement {
     value: '0',
     'aria-describedby': 'hint-readout',
   }) as HTMLInputElement;
+  const sliderOut = el('output', { class: 'slider-out', for: 'hint-slider' }, ['0']);
 
   const readout = el('p', { class: 'readout-line', id: 'hint-readout', role: 'status', 'aria-live': 'polite' });
   const errorRow = el('div', {
     class: 'bit-row',
     role: 'group',
-    'aria-label': 'The secret error vector; revealed coordinates are marked known',
+    'aria-label': 'The error vector from the attacker’s view; ? means unknown, 🔓 means leaked',
+  });
+  const revealBtn = el('button', { type: 'button', class: 'preset' }, ['Show planted truth']);
+  revealBtn.addEventListener('click', () => {
+    revealTruth = !revealTruth;
+    revealBtn.textContent = revealTruth ? 'Hide planted truth' : 'Show planted truth';
+    revealBtn.setAttribute('aria-pressed', String(revealTruth));
+    notify();
   });
   const meter = el('div', { class: 'meter', role: 'status', 'aria-live': 'polite' });
   const result = el('div', { class: 'result-region', role: 'status', 'aria-live': 'polite' });
 
-  slider.addEventListener('input', () => setHints(Number(slider.value)));
+  // Comparative run log — runs accumulate instead of replacing each other.
+  const runTableBody = el('tbody', { id: 'run-body' });
+  const runTable = el('table', { class: 'readout run-table' }, [
+    el('caption', { class: 'visually-hidden' }, [
+      'Every attack you run, newest first: algorithm, hints, residual instance, median work over ' +
+        TRIALS +
+        ' seeds with a p10–p90 spread, median permutations, and whether the recovered error verified.',
+    ]),
+    el('thead', {}, [
+      el('tr', {}, [
+        el('th', { scope: 'col' }, ['#']),
+        el('th', { scope: 'col' }, ['Algorithm']),
+        el('th', { scope: 'col' }, ['Hints']),
+        el('th', { scope: 'col' }, ['Residual (n, w)']),
+        el('th', { scope: 'col' }, ['Median work']),
+        el('th', { scope: 'col' }, ['p10–p90']),
+        el('th', { scope: 'col' }, ['Median perms']),
+        el('th', { scope: 'col' }, ['Verified']),
+      ]),
+    ]),
+    runTableBody,
+  ]);
 
-  const runBtn = el('button', { type: 'button', class: 'btn btn-accent' }, ['Run the real ISD attack']);
-  runBtn.addEventListener('click', () => runAndShow());
-
-  function runAndShow() {
-    const algo = state.algo;
-    const res = runSolver(algo, state.hints, 0x1d ^ (state.hints + (algo === 'stern' ? 1000 : 0)));
-    // Also record a stabilised measured point so the chart's dot updates.
-    measureAndStore(algo, state.hints);
-    notify();
-
-    clear(result);
-    if (res.solved && res.recovered) {
-      const ok = matVec(MAIN.H, res.recovered).every((b, i) => b === MAIN.s[i]);
-      const sternParams = 'params' in res ? (res as { params: { p: number; l: number } }).params : null;
-      // A successful recovery is an ALARM: the attacker won for this instance.
-      result.append(
-        el('div', { class: 'meter' }, [
-          el('span', { class: 'meter-badge state-broken' }, ['💥', `${ALGO_LABEL[algo]} recovered e`]),
-          el('p', { class: 'meter-text' }, [
-            el('strong', {}, [`Security broken for this instance.`]),
-            document.createTextNode(
-              ` ${res.iterations.toLocaleString()} permutation${res.iterations === 1 ? '' : 's'}, ` +
-                `${res.work.toLocaleString()} elementary ops (${bitsToWork(Math.log2(Math.max(1, res.work)))}).` +
-                (sternParams && sternParams.p > 0
-                  ? ` Stern ran a birthday search with p=${sternParams.p}, ℓ=${sternParams.l}.`
-                  : ''),
-            ),
-          ]),
-        ]),
-        el('p', { class: 'readout-line mono' }, [`e = ${bitstring(res.recovered)}`]),
-        el('p', { class: ok ? 'cmp-pass' : 'cmp-fail' }, [
-          ok ? '✓ verified: H·e = s' : '✗ verification FAILED',
-        ]),
-        el('p', { class: 'footnote' }, [
-          `Residual instance the ${state.hints} hint${state.hints === 1 ? '' : 's'} left: length n=${res.reduced.n}, weight w=${res.reduced.w}. `,
-          'This recovers the error vector e — not a decryption forgery.',
-        ]),
+  function renderTable() {
+    clear(runTableBody);
+    if (runLog.length === 0) {
+      runTableBody.append(
+        el('tr', {}, [el('td', { colspan: '8', class: 'muted' }, ['No runs yet — press Run or Run both.'])]),
       );
-    } else {
-      result.append(
-        el('div', { class: 'meter' }, [
-          el('span', { class: 'meter-badge state-hard' }, ['🛡️', 'no solution within the cap']),
-          el('p', { class: 'meter-text' }, [
-            `${ALGO_LABEL[algo]} exhausted its iteration cap without a hit — leak more hints and try again.`,
+      return;
+    }
+    for (const r of runLog) {
+      runTableBody.append(
+        el('tr', {}, [
+          el('td', {}, [String(r.id)]),
+          el('td', {}, [ALGO_LABEL[r.algo]]),
+          el('td', { class: 'mono' }, [String(r.hints)]),
+          el('td', { class: 'mono' }, [`(${r.residualN}, ${r.residualW})`]),
+          el('td', { class: 'mono' }, [fmtBits(r.medianBits)]),
+          el('td', { class: 'mono' }, [`${r.p10Bits.toFixed(1)}–${r.p90Bits.toFixed(1)}`]),
+          el('td', { class: 'mono' }, [r.medianIters.toLocaleString()]),
+          el('td', {}, [
+            r.verified
+              ? el('span', { class: 'cmp-pass' }, ['✓ H·e=s'])
+              : el('span', { class: 'cmp-fail' }, ['✗']),
           ]),
         ]),
       );
     }
   }
 
+  slider.addEventListener('input', () => setHints(Number(slider.value)));
+
+  const runBtn = el('button', { type: 'button', class: 'btn btn-accent' }, ['Run the real ISD attack']);
+  runBtn.addEventListener('click', () => runOne(state.algo));
+  const runBothBtn = el('button', { type: 'button', class: 'btn' }, ['Run both algorithms']);
+  runBothBtn.addEventListener('click', () => runBoth());
+  const resetBtn = el('button', { type: 'button', class: 'preset' }, ['Reset runs']);
+  resetBtn.addEventListener('click', () => {
+    resetRuns();
+    renderTable();
+    clear(result);
+  });
+
+  function runOne(algo: Algo) {
+    const rec = runExperiment(algo, state.hints);
+    renderResult([rec]);
+    renderTable();
+    notify();
+  }
+  function runBoth() {
+    const pr = runExperiment('prange', state.hints);
+    const st = runExperiment('stern', state.hints);
+    renderResult([pr, st]);
+    renderTable();
+    notify();
+  }
+
+  function renderResult(recs: RunRecord[]) {
+    clear(result);
+    // Show one genuine recovered, verified error vector (the "break it" moment).
+    const withE = recs.find((r) => r.sample.recovered) ?? recs[0];
+    const sample = withE.sample;
+    const solved = sample.solved && sample.recovered;
+
+    result.append(
+      el('div', { class: 'meter' }, [
+        el('span', { class: `meter-badge ${solved ? 'state-broken' : 'state-hard'}` }, [
+          solved ? '💥' : '🛡️',
+          solved ? 'error recovered' : 'no solution within the cap',
+        ]),
+        el('p', { class: 'meter-text' }, [
+          ...recs.map((r) =>
+            el('span', { class: 'run-line' }, [
+              el('strong', {}, [ALGO_LABEL[r.algo]]),
+              document.createTextNode(
+                `: median ${fmtBits(r.medianBits)} (p10–p90 ${r.p10Bits.toFixed(1)}–${r.p90Bits.toFixed(1)}), ` +
+                  `${r.medianIters.toLocaleString()} median permutations over ${r.trials} seeds. `,
+              ),
+              r.verified ? el('span', { class: 'cmp-pass' }, ['✓ verified']) : el('span', { class: 'cmp-fail' }, ['✗']),
+            ]),
+          ),
+        ]),
+      ]),
+    );
+    if (solved && sample.recovered) {
+      const sternParams = 'params' in withE.sample ? (withE.sample as { params: { p: number; l: number } }).params : null;
+      result.append(
+        el('p', { class: 'readout-line mono' }, [`recovered e = ${bitstring(sample.recovered)}`]),
+        el('p', { class: 'footnote' }, [
+          `Residual instance the ${state.hints} hint${state.hints === 1 ? '' : 's'} left: length n=${sample.reduced.n}, weight w=${sample.reduced.w}.` +
+            (sternParams && sternParams.p > 0 ? ` Stern used p=${sternParams.p}, ℓ=${sternParams.l}.` : ''),
+          ' This recovers the error vector e — not a decryption forgery.',
+        ]),
+      );
+    } else {
+      result.append(
+        el('p', { class: 'footnote' }, ['Leak more hints and try again — the residual search is still beyond the cap.']),
+      );
+    }
+  }
+
   function update(s: State) {
     slider.value = String(s.hints);
+    sliderOut.textContent = String(s.hints);
     const cur = workCurves()[s.hints];
 
     clear(readout);
     readout.append(
       el('strong', {}, [`${s.hints} of ${MAIN.w} perfect hints`]),
       document.createTextNode(
-        ` — residual weight ${cur.w}. Modelled total work: Prange ${bitsToWork(cur.prangeBits)} ops, Stern ${bitsToWork(cur.sternBits)} ops.`,
+        ` — residual weight ${cur.w}. Modelled total work: Prange ${bitsToWork(cur.prangeBits)}, Stern ${bitsToWork(cur.sternBits)} elementary ops.`,
       ),
     );
 
-    // Error vector display.
+    // Error vector from the ATTACKER's view: unknown coords are "?", leaked ones
+    // show their value with a lock. "Show planted truth" reveals the real vector.
     clear(errorRow);
     for (let i = 0; i < MAIN.n; i++) {
       const isSupport = MAIN.e[i] === 1;
       const known = isSupport && SUPPORT.indexOf(i) < s.hints;
-      const cell = el(
-        'span',
-        {
-          class: `bit${isSupport ? ' set support' : ''}${known ? ' hint-known' : ''}`,
-          'aria-label': `Position ${i}: ${isSupport ? 'error bit 1' : 'zero'}${known ? ', leaked by a hint' : ''}`,
-        },
-        [el('span', { class: 'idx' }, [String(i)]), known ? '🔓' : isSupport ? '1' : '0'],
+      let glyph: string, cls: string, aria: string;
+      if (known) {
+        glyph = '🔓';
+        cls = 'bit set support hint-known';
+        aria = `Position ${i}: leaked, error bit 1`;
+      } else if (revealTruth) {
+        glyph = isSupport ? '1' : '0';
+        cls = `bit${isSupport ? ' set support' : ''}`;
+        aria = `Position ${i}: ${isSupport ? 'error bit 1' : 'zero'} (planted truth)`;
+      } else {
+        glyph = '?';
+        cls = 'bit unknown';
+        aria = `Position ${i}: unknown to the attacker`;
+      }
+      errorRow.append(
+        el('span', { class: cls, 'aria-label': aria }, [el('span', { class: 'idx' }, [String(i)]), glyph]),
       );
-      errorRow.append(cell);
     }
 
     // Meter — colour tracks security integrity (icon + text + colour, never colour alone).
@@ -398,6 +549,7 @@ function sectionAttack(): HTMLElement {
     );
   }
   subscribe(update);
+  renderTable();
 
   const sternExplainer = el('details', {}, [
     el('summary', {}, ['How Stern differs from Prange (the mechanism)']),
@@ -423,7 +575,7 @@ function sectionAttack(): HTMLElement {
   ]);
 
   return el('section', { class: 'card card-primary', 'aria-labelledby': 'attack-h' }, [
-    el('p', { class: 'eyebrow' }, [el('span', { class: 'step-num' }, ['2']), 'Break it yourself']),
+    el('p', { class: 'eyebrow' }, [el('span', { class: 'step-num' }, ['1']), 'Break it yourself']),
     el('h2', { id: 'attack-h' }, ['Pick an algorithm, feed it hints, run it for real']),
     el('p', { class: 'lede' }, [
       'A ',
@@ -442,20 +594,41 @@ function sectionAttack(): HTMLElement {
     sternExplainer,
     el('div', { class: 'control' }, [
       el('label', { for: 'hint-slider' }, ['Perfect hints leaked (coordinates of the true error)']),
-      slider,
+      el('div', { class: 'slider-row' }, [
+        el('span', { class: 'slider-end' }, ['0']),
+        slider,
+        el('span', { class: 'slider-end' }, [String(MAIN.w)]),
+        sliderOut,
+      ]),
       readout,
     ]),
-    el('h3', {}, ['The secret error e — 🔓 marks a leaked coordinate']),
+    el('div', { class: 'error-head' }, [
+      el('h3', {}, ['The error vector — attacker’s view']),
+      revealBtn,
+    ]),
     errorRow,
-    meter,
-    el('div', { class: 'btn-row' }, [runBtn]),
-    result,
     el('p', { class: 'footnote' }, [
-      'The slider leaks the ',
+      '“?” is a coordinate the attacker has not learned; ',
+      el('strong', {}, ['🔓']),
+      ' is one a hint leaked. Use ',
+      el('em', {}, ['Show planted truth']),
+      ' to peek at the real error (teaching only — the attacker never sees this).',
+    ]),
+    meter,
+    el('div', { class: 'btn-row' }, [runBtn, runBothBtn, resetBtn]),
+    result,
+    el('h3', {}, ['Your runs (newest first)']),
+    el('div', { class: 'table-scroll' }, [runTable]),
+    el('p', { class: 'footnote' }, [
+      'Each run is ',
+      String(TRIALS),
+      ' genuine attacks on distinct seeds; the table reports the ',
+      el('strong', {}, ['median']),
+      ' work with a p10–p90 spread, because a single randomized search has a wide geometric spread. The slider leaks the ',
       el('em', {}, ['informative']),
-      ` case — coordinates that are actually part of the support. Revealing the whole weight-${MAIN.w} support (${MAIN.w} hints) leaves nothing to search, the crisp `,
+      ` case — coordinates actually in the support. Revealing the whole weight-${MAIN.w} support (${MAIN.w} hints) leaves nothing to search, the crisp `,
       el('strong', {}, ['hint-count-to-polynomial bound of this support-leakage model: ≈ w hints']),
-      '. This is this demo’s bound, not a verbatim restatement of the paper’s general result; faults that land on zeros help less, and the paper handles the general hint channel.',
+      '. This is this demo’s bound, not a verbatim restatement of the paper’s general result.',
     ]),
   ]);
 }
@@ -463,9 +636,28 @@ function sectionAttack(): HTMLElement {
 function sectionCurve(): HTMLElement {
   const chartHost = el('figure', { class: 'chart-wrap', role: 'group', 'aria-label': 'Work-factor curves' });
   const chartCap = el('figcaption', { class: 'chart-cap', id: 'work-chart-cap' }, [
-    'Total attack work (log₂ of the elementary-operation ledger) versus perfect hints leaked, for both real algorithms. The upper line is Prange, the lower line is Stern — the vertical gap between them is the algorithm advantage, and both fall toward the polynomial floor (dashed) as hints add up. Dots are the average of real runs you launched; the vertical line marks the current hint count.',
+    'Total attack work (log₂ of the elementary-operation ledger) versus perfect hints leaked, for both real algorithms. The upper line is Prange, the lower line is Stern — the vertical gap between them is the algorithm advantage, and both fall toward the polynomial floor (dashed) as hints add up. Dots are the median of the real runs you launched; the vertical line marks the current hint count. The same numbers are in the data table below.',
   ]);
   const chartDesc = el('p', { class: 'visually-hidden', id: 'work-chart-desc', role: 'status', 'aria-live': 'polite' });
+  const dataBody = el('tbody');
+
+  function renderDataTable(points: WorkPoint[]) {
+    clear(dataBody);
+    for (const p of points) {
+      const mp = measured.prange.get(p.hints);
+      const ms = measured.stern.get(p.hints);
+      dataBody.append(
+        el('tr', {}, [
+          el('td', { class: 'mono' }, [String(p.hints)]),
+          el('td', { class: 'mono' }, [`${p.n}, ${p.w}`]),
+          el('td', { class: 'mono' }, [p.prangeBits.toFixed(1)]),
+          el('td', { class: 'mono' }, [p.sternBits.toFixed(1)]),
+          el('td', { class: 'mono' }, [mp == null ? '—' : mp.toFixed(1)]),
+          el('td', { class: 'mono' }, [ms == null ? '—' : ms.toFixed(1)]),
+        ]),
+      );
+    }
+  }
 
   function update(s: State) {
     const points = workCurves();
@@ -492,6 +684,7 @@ function sectionCurve(): HTMLElement {
       chartCap,
       chartDesc,
     );
+    renderDataTable(points);
     const cur = points[s.hints];
     chartDesc.textContent =
       `At ${s.hints} of ${MAIN.w} hints, modelled total work is ${fmtBits(cur.prangeBits)} for Prange and ` +
@@ -500,8 +693,30 @@ function sectionCurve(): HTMLElement {
   }
   subscribe(update);
 
+  const dataTable = el('details', { class: 'chart-data' }, [
+    el('summary', {}, ['Chart data (model bits per hint, plus your measured medians)']),
+    el('div', { class: 'table-scroll' }, [
+      el('table', { class: 'readout' }, [
+        el('caption', { class: 'visually-hidden' }, [
+          'Modelled total work in bits for Prange and Stern at each hint count, and the median measured work from any runs you launched.',
+        ]),
+        el('thead', {}, [
+          el('tr', {}, [
+            el('th', { scope: 'col' }, ['Hints']),
+            el('th', { scope: 'col' }, ['Residual n, w']),
+            el('th', { scope: 'col' }, ['Prange model']),
+            el('th', { scope: 'col' }, ['Stern model']),
+            el('th', { scope: 'col' }, ['Prange measured']),
+            el('th', { scope: 'col' }, ['Stern measured']),
+          ]),
+        ]),
+        dataBody,
+      ]),
+    ]),
+  ]);
+
   return el('section', { class: 'card', 'aria-labelledby': 'curve-h' }, [
-    el('p', { class: 'eyebrow' }, [el('span', { class: 'step-num' }, ['3']), 'Watch it collapse']),
+    el('p', { class: 'eyebrow' }, [el('span', { class: 'step-num' }, ['2']), 'Watch it collapse']),
     el('h2', { id: 'curve-h' }, ['Two axes at once: the algorithm and the hints']),
     el('p', { class: 'lede' }, [
       'This is the whole result in one picture, and it separates two things. The ',
@@ -513,8 +728,8 @@ function sectionCurve(): HTMLElement {
       ' — leakage helps ',
       el('em', {}, ['both']),
       ' algorithms, and the gap narrows as the problem gets easy. The dots are the ',
-      el('strong', {}, ['measured']),
-      ' averages of the real runs you launch above; run each algorithm at a few hint counts to plot them.',
+      el('strong', {}, ['measured medians']),
+      ' of the real runs you launch above; run each algorithm at a few hint counts to plot them.',
     ]),
     duplicateSlider(),
     chartHost,
@@ -525,6 +740,7 @@ function sectionCurve(): HTMLElement {
       el('span', {}, [el('span', { class: 'swatch dot-stern' }), 'Stern measured']),
       el('span', {}, [el('span', { class: 'swatch floor' }), 'polynomial floor']),
     ]),
+    dataTable,
   ]);
 }
 
@@ -639,7 +855,10 @@ function sectionCompare(): HTMLElement {
             scheme.posture === 'fragile' ? '↓ fewer hints (toy)' : '↑ more hints (toy)',
           ]),
         ]),
-        el('p', { class: 'scheme-stat' }, [`real: ${scheme.realParams}`]),
+        el('p', { class: 'scheme-stat' }, [
+          'real: ',
+          el('a', { href: scheme.sourceUrl, target: '_blank', rel: 'noopener noreferrer' }, [scheme.realParams]),
+        ]),
         el('p', { class: 'scheme-stat' }, [`n = `, el('b', {}, [scheme.realN.toLocaleString()]), `, error weight t = `, el('b', {}, [String(scheme.realT)])]),
         el('p', { class: 'prose small' }, [scheme.blurb]),
         el('p', { class: 'scheme-stat' }, [
@@ -816,9 +1035,9 @@ function main() {
   const host = $('#content');
   host.append(
     sectionIntro(),
-    sectionPrimer(),
     sectionAttack(),
     sectionCurve(),
+    sectionPrimer(),
     sectionApprox(),
     sectionCompare(),
     sectionReference(),

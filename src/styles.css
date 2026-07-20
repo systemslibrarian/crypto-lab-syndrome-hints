@@ -643,10 +643,66 @@ input[type="number"] {
 .result-region {
   margin-top: 0.6rem;
 }
+.run-line {
+  display: block;
+}
 @media (max-width: 640px) {
   .algo-select {
     flex-direction: column;
   }
+}
+
+/* --------------------------------------------------- slider + outputs ----- */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.slider-row input[type="range"] {
+  flex: 1 1 auto;
+}
+.slider-end {
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  flex: 0 0 auto;
+}
+.slider-out {
+  flex: 0 0 auto;
+  min-width: 2ch;
+  text-align: center;
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--accent-strong);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.1rem 0.45rem;
+}
+
+.error-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+.error-head h3 {
+  margin: 0;
+}
+.bit.unknown {
+  color: var(--text-muted);
+  border-style: dashed;
+}
+
+/* ------------------------------------------------------------ run table --- */
+.run-table th,
+.run-table td {
+  white-space: nowrap;
+}
+.chart-data,
+.hand-decode {
+  margin-top: 1rem;
 }
 
 /* -------------------------------------------------------------- tables ---- */

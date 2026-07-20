@@ -50,24 +50,30 @@ This demo makes that concrete:
 
 ## Exhibits
 
-1. **See the problem** — a real `H` (`24×48`) and syndrome `s`; flip a candidate
-   `e` by hand and watch `H·e` get compared, bit for bit, against `s`.
-2. **Break it yourself** — a real **algorithm selector (Prange | Stern)** drives
+1. **Break it yourself** — a real **algorithm selector (Prange | Stern)** drives
    which genuine solver runs. Leak coordinates of the true error with the
-   perfect-hint slider, then press **Run the real ISD attack**: the chosen decoder
-   solves the residual instance and reports the permutations and GF(2) operations
-   it actually took (and, for Stern, the birthday parameters `p`, `ℓ` it used).
-3. **Watch it collapse** — the headline chart: **two real work-factor curves**
-   (Prange and Stern) versus hint count. The vertical gap between them is the
-   algorithm advantage; sliding right is the hint axis. Both fall to the
-   polynomial floor once the support is known, with the **measured** averages of
-   the real runs you launch overlaid as dots.
+   perfect-hint slider (the error vector is shown from the **attacker's view** —
+   `?` for unknown, `🔓` for leaked — with an optional "show planted truth"), then
+   press **Run**, **Run both**, or **Reset**. Each run is 15 seeded attacks; a
+   **comparative results table** records the median work with a p10–p90 spread,
+   the median permutations, and the `H·e = s` verification for every run.
+2. **Watch it collapse** — the headline chart: **two real work-factor curves**
+   (Prange and Stern) versus hint count. The vertical gap is the algorithm
+   advantage; sliding right is the hint axis. Both fall to the polynomial floor
+   once the support is known, with the **measured medians** of your runs overlaid
+   as dots (and an accessible data table of every value).
+3. **Inspect the instance** — the real `H` (`40×64`) and syndrome `s` you just
+   attacked; an optional hand-decode exercise lets you flip a candidate `e` and
+   watch `H·e` get compared, bit for bit, against `s`.
 4. **Approximate hints (model)** — the soft-decision recasting of a noisy
    Hamming-weight leak, with a noise slider and the information-gain formula.
-5. **McEliece vs HQC** — the paper's error-weight finding: run both toy instances
-   and see the low-weight scheme reach polynomial time after far fewer hints.
-6. **Reference** — the exact Prange work-factor formula, the explicit
-   hint-count-to-polynomial bound (`≈ w`), and the sources.
+5. **McEliece vs HQC** — the error-weight *mechanism* on two toys: a lower-weight
+   error reaches polynomial time after fewer support hints. Illustrative, not a
+   scaled model of the real schemes.
+6. **Reference** — the exact Prange and Stern work-factor formulas, the explicit
+   hint-count-to-polynomial bound (`≈ w`), and the sources. See also
+   [METHODOLOGY.md](METHODOLOGY.md) for the full claim → source → code → test → UI
+   trace.
 
 ## When to Use It
 
@@ -126,32 +132,42 @@ npm run test:a11y  # axe-core WCAG gate on the production build, both themes
 
 ## Build & Verify
 
-- **Unit tests:** 47 Vitest tests across `src/sdp/*.test.ts`, run in CI before every
+- **Unit tests:** 60 Vitest tests across `src/sdp/*.test.ts`, run in CI before every
   deploy. This includes **16 spec known-answer tests** for the [7,4] Hamming code:
   9 syndrome KATs (`src/sdp/instance.test.ts`) — every single-bit error has syndrome
   equal to its position's binary value, plus zero-syndrome and XOR-linearity — and
   **7 Stern decoding KATs** (`src/sdp/stern.test.ts`), where Stern recovers each
   canonical single-bit error of the Hamming code.
-- **Correctness embodied:** the Prange tests (`src/sdp/isd.test.ts`) and Stern tests
-  (`src/sdp/stern.test.ts`) confirm each real attack recovers `e` with `H·e = s`
-  verified, that revealing the full support collapses the search to 0 iterations
-  (polynomial), and that more support hints lower the cost. A dedicated test asserts
-  Stern's measured work is genuinely **lower than Prange's** on the same instance —
-  the whole point of the second algorithm.
-- **Work-factor model:** `src/sdp/workfactor.test.ts` checks the Prange curve is
-  monotonically non-increasing in hints and hits the polynomial floor at `w` hints,
-  and that the Stern model work is strictly below Prange until both reach the floor.
+- **Correctness embodied:** the Prange and Stern tests confirm each real attack
+  recovers `e` with `H·e = s` verified, that full support leakage collapses the
+  search to 0 iterations (polynomial), and that Stern's measured work is genuinely
+  **lower than Prange's** on the same instance.
+- **Cross-checked against ground truth:** `src/sdp/adversarial.test.ts` compares both
+  solvers to **exhaustive minimum-weight decoding** on tiny instances, round-trips the
+  hint reduction/reconstruction, checks fail-closed behaviour on contradictory hints,
+  and **calibrates** the measured medians against the work model over a grid of
+  Gilbert–Varshamov-bound instances (Prange within ~2 bits; Stern's model a mild
+  conservative over-estimate).
+- **Work-factor model:** `src/sdp/workfactor.test.ts` checks both curves are
+  monotone in hints, hit the polynomial floor, and that Stern's model stays below
+  Prange until both converge.
+- **Behaviour gate:** `e2e/behavior.spec.ts` asserts the scientific contract in a
+  real browser — the selected algorithm actually runs, results verify `H·e = s`, the
+  two sliders stay in sync, Run both/Reset work, and there is no horizontal overflow
+  at a 375 px phone width.
 - **Implemented algorithms:** Prange and Stern only. MMT and BJMM are named as
   further ISD refinements but are not implemented.
 - **Accessibility gate:** `@axe-core/playwright` scans the production build for zero
-  WCAG 2.1 A/AA violations in **both** themes; it drives every panel (attack, chart,
-  comparison, approximate-hints, details) into its post-interaction state first. The
-  GitHub Pages deploy is blocked on any violation.
+  WCAG 2.1 A/AA violations in **both** themes; it drives every panel into its
+  post-interaction state (both solvers, the run table, the attacker/planted views,
+  all details) first. The GitHub Pages deploy is blocked on any violation.
 
 ## Performance
 
-The instance is an honestly-labelled toy (`n = 48`, `w = 10`) — sized so Prange
-visibly struggles where Stern does not, yet both real solvers finish in a few
+The instance is an honestly-labelled toy at the **Gilbert–Varshamov bound**
+(`n = 64`, `k = 24`, `w = 11`) — the planted error is essentially the unique
+low-weight solution, so the work model is faithful, and it is sized so Prange
+visibly struggles where Stern does not. Both real solvers finish in a few
 milliseconds on a desktop browser. All computation is in the browser — no
 backend, no network calls.
 
