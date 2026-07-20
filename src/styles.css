@@ -1,0 +1,804 @@
+/* ==========================================================================
+   Syndrome Hints — theme + component styles.
+   Dark is the default (:root); light overrides live under
+   :root[data-theme="light"]. Every text/background pair here is authored to
+   WCAG 2.1 AA (>=4.5:1 body, >=3:1 large text / UI) in BOTH themes; state is
+   never carried by colour alone (always icon + text + colour).
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+  --accent: #d98a2b; /* catalog accent — used for fills, borders, glyphs (3:1) */
+  --accent-strong: #f0ad57; /* accent as TEXT on --panel (>=4.5:1) */
+  --accent-ink: #201200; /* ink on an --accent fill (>=4.5:1) */
+
+  --bg: #12100d;
+  --panel: #1b1712;
+  --panel-2: #221d16;
+  --text: #f4eee3;
+  --text-dim: #d3c8b6; /* >=4.5:1 on --panel */
+  --text-muted: #b3a894; /* >=4.5:1 on --panel */
+  --border: #3b3327;
+
+  --ok: #59c081; /* hard / safe — the search still resists */
+  --ok-ink: #05230f;
+  --alarm: #ff7a5c; /* solved / broken — attack succeeded */
+  --alarm-ink: #2a0a00;
+  --warn: #f0b846; /* draining */
+  --warn-ink: #241900;
+
+  --ok-text: #7fd6a0; /* status words as text on --panel (>=4.5:1) */
+  --alarm-text: #ff9077;
+  --warn-text: #f0c266;
+
+  --stern: #3fb8cc; /* the second algorithm's line/glyph colour (UI, >=3:1) */
+  --stern-strong: #62d2e4; /* Stern as a dot/marker on --panel */
+
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --radius: 12px;
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --accent: #c2761b;
+  --accent-strong: #8a4f0a; /* dark orange text on light panels */
+  --accent-ink: #241300; /* dark ink on the medium-orange accent fill (>=4.5:1) */
+
+  --bg: #f7f2e9;
+  --panel: #ffffff;
+  --panel-2: #f4ede1;
+  --text: #211a11;
+  --text-dim: #4c4234;
+  --text-muted: #5f5647;
+  --border: #d9ceba;
+
+  --ok: #1f7a48;
+  --ok-ink: #ffffff;
+  --alarm: #c33c22;
+  --alarm-ink: #ffffff;
+  --warn: #9a6a12;
+  --warn-ink: #ffffff;
+
+  --ok-text: #166b3b;
+  --alarm-text: #a52c15;
+  --warn-text: #6f4a0c;
+
+  --stern: #0f7f90;
+  --stern-strong: #0b6675;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 26px rgba(60, 45, 20, 0.1);
+}
+
+/* html owns its own background so axe/WebKit see it in both themes (longhand,
+   not the `background` shorthand). */
+html {
+  background-color: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scope base element rules to #app so they never fight the always-dark shared
+   top bar (which brings its own self-contained styles). */
+#app {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2rem) clamp(1rem, 4vw, 2rem) 3rem;
+}
+
+#app p {
+  margin: 0 0 0.75rem;
+}
+#app h2 {
+  font-size: clamp(1.2rem, 2.4vw, 1.55rem);
+  margin: 0 0 0.4rem;
+  line-height: 1.2;
+}
+#app h3 {
+  font-size: 1.05rem;
+  margin: 1.1rem 0 0.4rem;
+}
+
+/* Inline links always carry a persistent underline (never colour alone). */
+#app a {
+  color: var(--accent-strong);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+#app a:hover {
+  text-decoration-thickness: 2px;
+}
+
+code,
+.mono {
+  font-family: var(--mono);
+}
+#app code {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0.05em 0.35em;
+  font-size: 0.9em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------------------- hero ---- */
+/* BEGIN cl-hero standard — managed, keep in sync across fleet */
+.cl-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: clamp(1rem, 4vw, 3rem);
+  flex-wrap: wrap;
+  margin: clamp(1rem, 3vw, 2rem) 0 1.5rem;
+}
+.cl-hero-main {
+  flex: 1 1 22rem;
+  min-width: min(100%, 20rem);
+}
+.cl-hero-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 3.8vw, 2.7rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+.cl-hero-sub {
+  margin: 0.4rem 0 0;
+  font-size: clamp(0.9rem, 1.6vw, 1.05rem);
+  letter-spacing: 0.01em;
+  color: var(--accent-strong);
+  font-family: var(--mono);
+}
+.cl-hero-desc {
+  margin: 0.55rem 0 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+  max-width: 60ch;
+}
+.cl-hero-why {
+  flex: 0 1 min(40%, 26rem);
+  min-width: min(100%, 15rem);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.85rem 1.05rem;
+  background: color-mix(in oklab, var(--accent) 6%, transparent);
+}
+.cl-hero-why-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--accent-strong);
+}
+.cl-hero-why-text {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+@media (max-width: 640px) {
+  .cl-hero {
+    flex-direction: column;
+  }
+  .cl-hero-why {
+    flex-basis: auto;
+    width: 100%;
+  }
+}
+/* END cl-hero standard */
+
+/* --------------------------------------------------------------- cards ---- */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: clamp(1rem, 2.5vw, 1.6rem);
+  margin: 1.1rem 0;
+  box-shadow: var(--shadow);
+}
+.card-primary {
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--border));
+}
+.card-intro {
+  background: color-mix(in oklab, var(--accent) 7%, var(--panel));
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 0.4rem;
+}
+.step-num {
+  display: inline-grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+.lede {
+  color: var(--text-dim);
+  max-width: 68ch;
+}
+.prose {
+  color: var(--text-dim);
+  max-width: 70ch;
+}
+.prose strong,
+.lede strong {
+  color: var(--text);
+}
+.footnote {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.muted {
+  color: var(--text-muted);
+}
+.small {
+  font-size: 0.85rem;
+}
+
+/* -------------------------------------------------------- SDP instance ---- */
+.instance-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+  margin-top: 0.8rem;
+}
+.matrix-region {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  padding: 0.6rem;
+}
+.matrix {
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+}
+.matrix td {
+  width: 1.15rem;
+  height: 1.15rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+.matrix td.one {
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+.matrix .rowlabel,
+.matrix .collabel {
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  padding: 0 0.2rem;
+}
+
+.bit-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.bit {
+  min-width: 2rem;
+  height: 2.2rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+  padding-top: 0.55rem;
+}
+.bit .idx {
+  position: absolute;
+  top: 1px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.52rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+.bit.set {
+  background: color-mix(in oklab, var(--accent) 26%, var(--panel-2));
+  border-color: var(--accent);
+  color: var(--text);
+}
+.bit.hint-known {
+  border-color: var(--ok);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ok) 40%, transparent);
+}
+.bit.support::after {
+  content: "•";
+  position: absolute;
+  bottom: -0.1rem;
+  font-size: 0.7rem;
+  color: var(--accent-strong);
+}
+.bit[disabled] {
+  cursor: default;
+  opacity: 1;
+}
+
+.syndrome-chip {
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+}
+.cmp-pass {
+  color: var(--ok-text);
+  font-weight: 700;
+}
+.cmp-fail {
+  color: var(--alarm-text);
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------ controls ---- */
+.control {
+  margin: 1rem 0;
+}
+.control label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+input[type="number"] {
+  font: inherit;
+  padding: 0.4rem 0.55rem;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  max-width: 12rem;
+}
+.readout-line {
+  font-family: var(--mono);
+  margin-top: 0.4rem;
+}
+
+.btn {
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 0.55rem 1rem;
+  background: var(--panel-2);
+  color: var(--text);
+}
+.btn-accent {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+.btn-accent:hover {
+  filter: brightness(1.05);
+}
+.btn:hover {
+  border-color: var(--accent);
+}
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.8rem 0;
+  align-items: center;
+}
+.preset {
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text-dim);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+}
+.preset:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* --------------------------------------------------------- work meter ---- */
+.meter {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  margin: 1rem 0;
+  background: var(--panel-2);
+}
+.meter-badge {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid;
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.state-hard {
+  color: var(--ok-text);
+  border-color: var(--ok);
+  background: color-mix(in oklab, var(--ok) 14%, transparent);
+}
+.state-draining {
+  color: var(--warn-text);
+  border-color: var(--warn);
+  background: color-mix(in oklab, var(--warn) 16%, transparent);
+}
+.state-broken {
+  color: var(--alarm-text);
+  border-color: var(--alarm);
+  background: color-mix(in oklab, var(--alarm) 16%, transparent);
+}
+.meter-text {
+  line-height: 1.35;
+}
+.meter-text strong {
+  color: var(--text);
+}
+
+/* ---------------------------------------------------------------- chart --- */
+.chart-wrap {
+  margin: 1rem 0 0.4rem;
+}
+.chart {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-2);
+}
+.chart text {
+  font-family: var(--mono);
+  fill: var(--text-muted);
+}
+.chart .axis-line {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.chart .curve {
+  fill: none;
+  stroke-width: 2.5;
+}
+.chart .curve.prange {
+  stroke: var(--accent);
+}
+.chart .curve.stern {
+  stroke: var(--stern);
+}
+.chart .curve.sel {
+  stroke-width: 4;
+}
+.chart .vline {
+  stroke: var(--text-muted);
+  stroke-dasharray: 2 3;
+  stroke-width: 1;
+}
+.chart .poly-floor {
+  stroke: var(--ok);
+  stroke-dasharray: 5 4;
+  stroke-width: 1.5;
+}
+.chart .measured {
+  stroke: var(--panel);
+  stroke-width: 2;
+}
+.chart .measured-prange {
+  fill: var(--accent-strong);
+}
+.chart .measured-stern {
+  fill: var(--stern-strong);
+}
+.chart-cap {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.4rem;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.2rem;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-top: 0.4rem;
+}
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.swatch {
+  width: 1.6rem;
+  height: 0.35rem;
+  border-radius: 2px;
+  display: inline-block;
+}
+.swatch.curve-prange {
+  background: var(--accent);
+}
+.swatch.curve-stern {
+  background: var(--stern);
+}
+.swatch.floor {
+  background: var(--ok);
+}
+.swatch.dot-prange,
+.swatch.dot-stern {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+}
+.swatch.dot-prange {
+  background: var(--accent-strong);
+}
+.swatch.dot-stern {
+  background: var(--stern-strong);
+}
+
+/* --------------------------------------------------- algorithm selector --- */
+.algo-select {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem 0.9rem;
+  margin: 1rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.algo-select legend {
+  font-weight: 600;
+  padding: 0 0.4rem;
+  font-size: 0.9rem;
+}
+.algo-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  flex: 1 1 15rem;
+}
+.algo-option:has(input:checked) {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+}
+.algo-option input[type="radio"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
+}
+.algo-name {
+  font-weight: 700;
+}
+.algo-tag {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+.result-region {
+  margin-top: 0.6rem;
+}
+@media (max-width: 640px) {
+  .algo-select {
+    flex-direction: column;
+  }
+}
+
+/* -------------------------------------------------------------- tables ---- */
+.table-scroll {
+  overflow: auto;
+}
+table.readout {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.6rem;
+  font-size: 0.92rem;
+}
+table.readout th,
+table.readout td {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+table.readout th {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+table.readout td.mono {
+  font-family: var(--mono);
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid;
+}
+.pill-resistant {
+  color: var(--ok-text);
+  border-color: var(--ok);
+}
+.pill-fragile {
+  color: var(--alarm-text);
+  border-color: var(--alarm);
+}
+
+/* ----------------------------------------------------------- compare ---- */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.8rem;
+}
+.scheme-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  background: var(--panel-2);
+}
+.scheme-card h3 {
+  margin: 0 0 0.3rem;
+}
+.scheme-stat {
+  font-family: var(--mono);
+  font-size: 0.86rem;
+  color: var(--text-dim);
+  margin: 0.2rem 0;
+}
+.scheme-stat b {
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------- misc ---- */
+.gloss {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: help;
+}
+details {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.4rem 0.9rem;
+  margin: 0.8rem 0;
+  background: var(--panel-2);
+}
+summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.3rem 0;
+}
+.formula {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  overflow-x: auto;
+  font-size: 0.9rem;
+}
+.faq-item {
+  border-top: 1px solid var(--border);
+  padding: 0.7rem 0;
+}
+.faq-item:first-child {
+  border-top: none;
+}
+.faq-q {
+  font-weight: 700;
+  margin: 0 0 0.2rem;
+}
+.faq-a {
+  color: var(--text-dim);
+  margin: 0;
+}
+.tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.tag-model {
+  color: var(--warn-text);
+  border-color: var(--warn);
+}
+.tag-real {
+  color: var(--ok-text);
+  border-color: var(--ok);
+}
+
+/* ------------------------------------------------------------- footer ---- */
+.scripture-footer {
+  margin-top: 2.5rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+.scripture-footer a {
+  color: var(--accent-strong);
+}
+.scripture-footer .verse {
+  margin-top: 0.8rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+@media (max-width: 640px) {
+  .compare-grid {
+    grid-template-columns: 1fr;
+  }
+}
