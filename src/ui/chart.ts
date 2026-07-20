@@ -66,7 +66,13 @@ export function drawChart(spec: ChartSpec): SVGElement {
   const xStep = Math.max(1, Math.round(xMax / 6));
   for (let h = 0; h <= xMax; h += xStep) root.append(text(x(h), H - PAD_B + 16, String(h), 'middle'));
   root.append(text((W + PAD_L) / 2, H - 6, spec.xLabel, 'middle'));
-  root.append(text(14, PAD_T + 6, 'log₂ ops', 'start'));
+  // y-axis title, rotated to read up the left margin so it can't collide with
+  // the top tick label.
+  const yTitle = text(0, 0, 'log₂ operations', 'middle');
+  yTitle.setAttribute('transform', `translate(13, ${(PAD_T + (H - PAD_B)) / 2}) rotate(-90)`);
+  yTitle.setAttribute('x', '0');
+  yTitle.setAttribute('y', '0');
+  root.append(yTitle);
 
   // Current-hint vertical marker.
   if (spec.vline != null) {

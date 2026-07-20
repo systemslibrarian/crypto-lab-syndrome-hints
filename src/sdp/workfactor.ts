@@ -99,8 +99,12 @@ export function bestSternParams(inp: WorkInputs): SternParams {
   const k1 = Math.floor(k / 2);
   const k2 = k - k1;
   if (w < 2 || k1 < 1 || k2 < 1) return { p: 0, l: Math.min(1, r) };
+  // Baseline is the Prange fallback (p = 0): a real attacker never does worse
+  // than Prange, so only a birthday split that BEATS it is worth picking. This
+  // also keeps the work curve monotone in the hint count — Stern converges onto
+  // Prange in the low-weight regime, where the birthday overhead stops paying.
   let best: SternParams = { p: 0, l: Math.min(1, r) };
-  let bestBits = Infinity;
+  let bestBits = prangeWorkBits(inp);
   const pMax = Math.min(3, Math.floor(w / 2), k1, k2);
   for (let p = 1; p <= pMax; p++) {
     const lMax = r - (w - 2 * p);

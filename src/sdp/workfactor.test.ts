@@ -76,6 +76,17 @@ describe('Stern work model beats Prange on the toy instance', () => {
     const floor = { n: 38, r: 24, w: 0 };
     expect(sternWorkBits(floor)).toBeCloseTo(prangeWorkBits(floor), 6);
   });
+
+  it('Stern is never worse than Prange, and its curve is monotone in hints', () => {
+    let prev = Infinity;
+    for (let h = 0; h <= 10; h++) {
+      const inp = { n: 48 - h, r: 24, w: 10 - h };
+      const s = sternWorkBits(inp);
+      expect(s).toBeLessThanOrEqual(prangeWorkBits(inp) + 1e-9); // never worse than the fallback
+      expect(s).toBeLessThanOrEqual(prev + 1e-9); // more hints never raise the work
+      prev = s;
+    }
+  });
 });
 
 describe('McEliece vs HQC error-weight finding', () => {
