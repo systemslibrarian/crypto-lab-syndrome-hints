@@ -152,7 +152,6 @@ code,
 }
 
 /* ---------------------------------------------------------------- hero ---- */
-/* BEGIN cl-hero standard — managed, keep in sync across fleet */
 .cl-hero {
   display: flex;
   align-items: flex-start;
@@ -215,8 +214,11 @@ code,
     flex-basis: auto;
     width: 100%;
   }
+  .cl-hero-main {
+    flex-basis: auto;
+    min-width: 0;
+  }
 }
-/* END cl-hero standard */
 
 /* --------------------------------------------------------------- cards ---- */
 .card {
@@ -857,4 +859,24 @@ summary {
   .compare-grid {
     grid-template-columns: 1fr;
   }
+}
+
+
+/* Comfortable tap targets on touch devices without bulking up the mouse UI. */
+@media (pointer: coarse) {
+  #app button,
+  #app .btn,
+  #app select,
+  #app input[type="text"],
+  #app input[type="number"],
+  #app summary {
+    min-height: 44px;
+  }
+}
+
+/* Long unbroken hex/parameter strings must wrap rather than force a horizontal
+   scrollbar at narrow widths. */
+#app code,
+#app .mono {
+  overflow-wrap: anywhere;
 }
