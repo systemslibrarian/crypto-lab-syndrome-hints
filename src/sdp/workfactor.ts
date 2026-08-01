@@ -210,11 +210,14 @@ export function approxGainBits(blockSize: number, noiseBits: number): number {
 
 /**
  * The explicit hint-count-to-polynomial bound: how many perfect (support)
- * hints collapse the instance to polynomial time. For support-revealing faults
+ * hints collapse the instance to polynomial time. For error-location leakage
  * that is exactly w — reveal the whole support and nothing is left to search.
- * Low-weight schemes (small w) therefore fall to poly time after *few* hints;
- * high-weight schemes resist. This is the paper's error-weight finding in one
- * number.
+ *
+ * Note what is NOT in this bound: the code length n. Fragility here is a
+ * function of the ABSOLUTE error weight alone, so a lighter error falls after
+ * fewer hints and a heavier one resists. Relative weight t/n changes how hard
+ * the instance is at zero hints, not how many hints end it — which is why this
+ * bound does not separate mceliece348864 (t = 64) from hqc-128 (t = 66).
  */
 export function hintsToPolynomial(w: number): number {
   return w;

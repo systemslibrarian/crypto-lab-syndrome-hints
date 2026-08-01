@@ -17,19 +17,30 @@ syndrome `s = H·e`, recover the low-weight error vector `e`. With no side
 information the best known attacks (the **ISD** family — Prange, Stern, MMT,
 BJMM) cost exponential time.
 
-The **Hint-ISD** result (D'Achille, Esser, Kraus, ePrint 2026/341, building on
-Cayrel et al. Eurocrypt '21 and ISD-with-Hints ePrint 2021/279) asks what happens
-when the secret error partially leaks — through a **fault** or a **side channel**.
-Each leaked hint turns the problem into **soft-decision decoding**, and the work
-factor slides smoothly from exponential toward polynomial.
+The **Hint-ISD** result (D'Achille, Esser, Kraus, ePrint 2026/341) asks what
+happens when the secret error partially leaks — through a **fault** or a **side
+channel**. Each leaked hint turns the problem into **soft-decision decoding**, and
+the work factor slides smoothly from exponential toward polynomial.
 
-> **Scope note (Adapted).** This demo models a perfect hint as a direct
-> **support-coordinate reveal** (an exact leaked `e_i`) and an approximate hint as
-> a noisy block-weight meter. Those are deliberately strong, simplified stand-ins
-> chosen so the effect is easy to see and run; the paper's hint channel is more
-> general. Treat the "≈ w hints to polynomial" bound and the McEliece-vs-HQC
-> panel as illustrations of the *mechanism*, not verbatim reproductions of the
-> paper's quantitative results.
+### Which hint channel this demo implements
+
+There are two distinct hint channels in this literature, and this demo implements
+one of them:
+
+| Channel | What leaks | Source | Here? |
+| --- | --- | --- | --- |
+| **Known error locations** | the exact value of an error coordinate `e_i` — the attacker learns *where the error is* | Horlemann, Puchinger, Renner, Schamberger, Wachter-Zeh, *Information-Set Decoding with Hints*, [ePrint 2021/279](https://eprint.iacr.org/2021/279) | **implemented and executed** (the perfect-hint slider) |
+| **Known subblock Hamming weights** | a noisy weight reading over a block of coordinates | same paper (template attacks) | **modelled** (the approximate-hint panel) |
+| **Syndrome entries over the integers** | a fault suppresses the modular reduction, so the attacker reads integer-valued *syndrome* components — Hint-ISD's "perfect hints" | Cayrel et al., Eurocrypt '21, as described in [ePrint 2026/341](https://eprint.iacr.org/2026/341) | **cited as related work, not simulated** |
+
+The third row is a genuinely different channel from the first: syndrome
+components are not error positions, and this demo neither leaks nor models them.
+
+> **Scope note (Adapted).** The slider leaks the *informative* (support)
+> coordinates, so the "≈ w hints to polynomial" bound is this leakage model's
+> best case rather than a verbatim restatement of Hint-ISD's general result.
+> Treat that bound and the McEliece-vs-HQC panel as illustrations of the
+> *mechanism*, not reproductions of the paper's quantitative results.
 
 The best-known classical attacks form the **ISD family** — of which **Prange**
 and **Stern** are implemented here as two selectable real solvers, while **MMT**
@@ -68,8 +79,10 @@ This demo makes that concrete:
 4. **Approximate hints (model)** — the soft-decision recasting of a noisy
    Hamming-weight leak, with a noise slider and the information-gain formula.
 5. **McEliece vs HQC** — the error-weight *mechanism* on two toys: a lower-weight
-   error reaches polynomial time after fewer support hints. Illustrative, not a
-   scaled model of the real schemes.
+   error reaches polynomial time after fewer support hints, and the code length
+   does not enter the bound at all. Illustrative, not a scaled model of the real
+   schemes — at the quoted Level-1 parameters the bound gives McEliece 64 hints
+   and HQC 66, so it does not separate them.
 6. **Reference** — the exact Prange and Stern work-factor formulas, the explicit
    hint-count-to-polynomial bound (`≈ w`), and the sources. See also
    [METHODOLOGY.md](METHODOLOGY.md) for the full claim → source → code → test → UI
@@ -79,7 +92,8 @@ This demo makes that concrete:
 
 - **Use it** to teach why code-based security depends on the *secrecy of the whole
   error*, and how fault/side-channel leakage — not a break of the math — degrades
-  it; and to build intuition for why low-weight schemes are more hint-fragile.
+  it; and to build intuition for why the error weight, not the code length, is
+  what an error-location leak has to burn through.
 - **Do NOT use it** as an attack tool or a security estimate for real parameters.
   The runnable instances are tiny by design; the real Level-1 numbers are quoted
   as facts, not reproduced.
@@ -108,8 +122,10 @@ modelled orange curve. Toggle the theme in the top bar; both are AA-accessible.
 ## Real-World Usage
 
 The lineage is live cryptographic-engineering concern: fault attacks (Cayrel et
-al.) and template/power-analysis attacks against code-based KEM implementations
-motivate constant-time decoders, fault-detection, and masking. Hint-ISD quantifies
+al., leaking syndrome entries over the integers) and template/power-analysis
+attacks against code-based KEM implementations (leaking error locations and
+subblock weights — the channel this demo runs) motivate constant-time decoders,
+fault-detection, and masking. Hint-ISD quantifies
 how much a given amount of leakage is worth to an attacker — directly relevant to
 Classic McEliece and HQC as they move through standardisation.
 

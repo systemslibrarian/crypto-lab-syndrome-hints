@@ -58,7 +58,7 @@ function setAlgo(a: Algo) {
   notify();
 }
 
-/** The perfect hints for the first `count` support coordinates (informative faults). */
+/** The perfect hints for the first `count` support coordinates (informative leaks). */
 function hintsForCount(count: number): PerfectHint[] {
   return SUPPORT.slice(0, count).map((index) => ({ kind: 'perfect', index, value: 1 }));
 }
@@ -580,9 +580,11 @@ function sectionAttack(): HTMLElement {
     el('p', { class: 'lede' }, [
       'A ',
       el('strong', {}, ['perfect hint']),
-      ' here leaks one exact coordinate of the secret error — a deliberately strong, simplified form of fault leakage (in the spirit of Cayrel et al., Eurocrypt ’21). ',
+      ' here leaks one exact coordinate of the secret error — the ',
+      el('strong', {}, ['known error locations']),
+      ' hint of ISD-with-Hints (ePrint 2021/279), the kind of leak a template or power-analysis attack on a decoder yields. ',
       el('span', { class: 'tag tag-model' }, ['Adapted']),
-      ' The paper’s hint channel is more general; this demo uses direct support-coordinate reveals so the effect is easy to see. Choose which real solver to run — ',
+      ' The slider leaks the informative (support) coordinates, so the “≈ w hints” bound below is this leakage model’s best case. A separate channel — the Cayrel et al. (Eurocrypt ’21) fault attack, which leaks syndrome entries over the integers — is cited here, not simulated. Choose which real solver to run — ',
       el('strong', {}, ['Prange']),
       ' (', el('code', {}, ['src/sdp/isd.ts']), ') or ',
       el('strong', {}, ['Stern']),
@@ -787,7 +789,7 @@ function sectionApprox(): HTMLElement {
       el('span', { class: 'mono' }, [fmtBits(Math.log2(blockSize + 1))]),
       document.createTextNode(`. With ${noiseBits.toFixed(1)} bits of noise it still shaves `),
       el('strong', {}, [fmtBits(gain)]),
-      document.createTextNode(' off the search exponent — a softer discount than a perfect fault, applied per hint.'),
+      document.createTextNode(' off the search exponent — a softer discount than an exact location leak, applied per hint.'),
     );
   }
   noise.addEventListener('input', refresh);
@@ -797,7 +799,7 @@ function sectionApprox(): HTMLElement {
     el('p', { class: 'eyebrow' }, [el('span', { class: 'tag tag-model' }, ['Model']), 'The other kind of hint']),
     el('h2', { id: 'approx-h' }, ['Approximate hints: soft, noisy side-channel leakage']),
     el('p', { class: 'lede' }, [
-      'The second lineage (ISD-with-Hints, ePrint 2021/279) does not leak an exact bit — it leaks a ',
+      'The other hint in ISD-with-Hints (ePrint 2021/279) does not leak an exact bit — it leaks a ',
       el('strong', {}, ['noisy Hamming weight']),
       ' over a block of coordinates, the kind of thing a power trace gives you. Hint-ISD recasts this as ',
       el('strong', {}, ['soft-decision decoding']),
@@ -875,9 +877,11 @@ function sectionCompare(): HTMLElement {
     el('p', { class: 'eyebrow' }, [el('span', { class: 'step-num' }, ['4']), 'How error weight drives hint-fragility']),
     el('h2', { id: 'compare-h' }, ['The error-weight mechanism, on two toys']),
     el('p', { class: 'lede' }, [
-      'The general mechanism the paper builds on: ',
+      'The mechanism, stated exactly as the model implements it: ',
       el('strong', {}, ['a lower-weight error reaches polynomial time after fewer support hints']),
-      '. These two toys are set at different weights (w = 6 vs w = 3) to show exactly that — run both and compare their hints-to-polynomial counts. They illustrate the mechanism; they are ',
+      ' — and the code length ',
+      el('em', {}, ['does not enter the bound at all']),
+      '. These two toys are set at different weights (w = 6 vs w = 3) to show that — run both and compare their hints-to-polynomial counts. They illustrate the mechanism; they are ',
       el('strong', {}, ['not scaled models']),
       ' of the real schemes.',
     ]),
@@ -888,9 +892,9 @@ function sectionCompare(): HTMLElement {
       el('code', {}, ['n']),
       ' and ',
       el('code', {}, ['t']),
-      ' are quoted Level-1 facts. Note the real schemes have similar ',
+      ' are quoted Level-1 facts; the toy weights are not scaled from them. Read literally at the real numbers, this demo’s bound gives 64 hints for McEliece and 66 for HQC — the two schemes have nearly the same ',
       el('em', {}, ['absolute']),
-      ' error weight (t ≈ 64 and 66); they differ in relative weight (t/n ≈ 1.8% vs 0.37%) and structure. Which scheme the paper judges more hint-sensitive follows from its full analysis, which this browser demo does not reproduce — changing the toy weights changes only the toys, not any real-scheme claim.',
+      ' error weight, so the bound does not separate them, and the toys exaggerate the gap on purpose so the mechanism stays visible. They differ instead in relative weight (t/n ≈ 1.8% vs 0.37%) and structure, which set the starting height of the curve rather than its hint budget. Which scheme Hint-ISD judges more hint-sensitive follows from its full analysis, which this browser demo does not reproduce.',
     ]),
   ]);
 }
@@ -958,13 +962,21 @@ function sectionReference(): HTMLElement {
             el('em', {}, ['Syndrome Decoding with Hints']),
             ', IACR ePrint ',
             el('a', { href: 'https://eprint.iacr.org/2026/341', target: '_blank', rel: 'noopener noreferrer' }, ['2026/341']),
-            ' — the Hint-ISD framing this demo visualises.',
+            ' — the Hint-ISD framing this demo visualises: hints recast the SDP as soft-decision decoding, and adapted ISD interpolates from exponential toward polynomial time.',
           ]),
-          el('li', {}, ['Cayrel et al., Eurocrypt ’21 — perfect hints via fault injection.']),
           el('li', {}, [
-            'ISD-with-Hints, IACR ePrint ',
+            'Cayrel et al., Eurocrypt ’21 — the fault attack behind Hint-ISD’s “perfect hints”: it suppresses the modular reduction so the attacker reads ',
+            el('strong', {}, ['syndrome entries over the integers']),
+            '. That is a different channel from the error-location leak implemented here — cited as related work, not simulated.',
+          ]),
+          el('li', {}, [
+            'Horlemann, Puchinger, Renner, Schamberger, Wachter-Zeh, ',
+            el('em', {}, ['Information-Set Decoding with Hints']),
+            ', IACR ePrint ',
             el('a', { href: 'https://eprint.iacr.org/2021/279', target: '_blank', rel: 'noopener noreferrer' }, ['2021/279']),
-            ' — Hamming-weight (approximate) hints.',
+            ' — the source of both hints this demo implements: ',
+            el('strong', {}, ['known error locations']),
+            ' (the perfect-hint slider) and known subblock Hamming weights (the approximate-hint model).',
           ]),
           el('li', {}, ['Stern, ', el('em', {}, ['A method for finding codewords of small weight']), ' (1989); Bernstein–Lange–Peters, ', el('em', {}, ['Attacking and defending the McEliece cryptosystem']), ' (PQCrypto 2008) — the implemented Stern variant and its cost model.']),
           el('li', {}, ['All arithmetic is in ', el('code', {}, ['src/sdp/']), ' (Prange in ', el('code', {}, ['isd.ts']), ', Stern in ', el('code', {}, ['stern.ts']), '); the tests (incl. Hamming [7,4] KATs for both) are the colocated ', el('code', {}, ['*.test.ts']), ' files.']),
@@ -989,8 +1001,14 @@ function sectionFaq(): HTMLElement {
       ['Genuinely different. Stern brings H to systematic form, splits the information set in half, and runs a birthday/collision search for an error with p ones in each half and none in an ℓ-row window — meeting in the middle so one expensive elimination is reused across many candidates. That is why its work factor is visibly lower. MMT and BJMM refine the middle step further and are ', el('strong', {}, ['named, not implemented']), '.'],
     ],
     [
-      'Why does low weight make HQC more fragile?',
-      ['A weight-t error hidden in n positions has a support that is a fraction t/n of the code. When t/n is small (HQC), each leaked coordinate is a big share of the whole secret, so few hints suffice. When t is large (McEliece), the same leak removes only a sliver.'],
+      'Is HQC more hint-fragile than Classic McEliece?',
+      [
+        'Not by this demo’s model, at the Level-1 parameters quoted here. The bound implemented is ',
+        el('strong', {}, ['hints to polynomial = w']),
+        ', and the code length never enters it — so mceliece348864 (t = 64) and hqc-128 (t = 66) come out within 3% of each other, and if anything the model asks for two ',
+        el('em', {}, ['more']),
+        ' hints against HQC. Absolute error weight is the whole fragility axis: a lighter error does collapse sooner, which is exactly what the two toys (w = 6 vs w = 3) demonstrate. What t/n changes (1.8% vs 0.37%) is how much security the instance starts with, not how many hints end it. Hint-ISD’s full analysis does conclude that higher-weight schemes such as McEliece resist hint exposure better than smaller-weight ones such as HQC — but that follows from its complete estimator, which this browser demo does not reproduce.',
+      ],
     ],
     [
       'Does recovering e mean I can forge a ciphertext?',
@@ -1022,7 +1040,7 @@ function sectionGaps(): HTMLElement {
       el('li', {}, ['Not production crypto — a teaching demo. It runs no real McEliece/HQC key recovery (browser-infeasible); it attacks small but genuine F₂ instances.']),
       el('li', {}, [el('span', { class: 'tag tag-real' }, ['Real']), ' The instances, the syndromes, and both perfect-hint ISD attacks — Prange and Stern — are executed and verified (H·e = s). Only these two algorithms are implemented.']),
       el('li', {}, [el('span', { class: 'tag tag-model' }, ['Model']), ' The work-factor curves (Prange and Stern expectations) and the approximate-hint discount: transparent formulas, labelled where shown. MMT and BJMM are named as further refinements but are NOT implemented.']),
-      el('li', {}, [el('span', { class: 'tag tag-model' }, ['Adapted']), ' A perfect hint here is a direct support-coordinate reveal — a strong, simplified stand-in for the paper’s more general hint channel. The slider leaks the informative (support) coordinates, so the “≈ w hints to polynomial” bound is this model’s best case, not a verbatim restatement of the paper’s general result.']),
+      el('li', {}, [el('span', { class: 'tag tag-model' }, ['Adapted']), ' A perfect hint here is a direct error-coordinate reveal — the “known error locations” hint of ISD-with-Hints (ePrint 2021/279). It is NOT the Cayrel et al. fault channel, which leaks syndrome entries over the integers; that one is cited, not implemented. The slider leaks the informative (support) coordinates, so the “≈ w hints to polynomial” bound is this leakage model’s best case, not a verbatim restatement of Hint-ISD’s general result.']),
       el('li', {}, ['Both algorithms recover the error vector e. Neither produces a decryption forgery or a full key recovery, and the demo does not model the physical acquisition that produces hints.']),
     ]),
   ]);

@@ -19,19 +19,27 @@ export interface Instance {
 }
 
 /**
- * The two hint kinds the paper's lineage distinguishes:
- *  - 'perfect'     — a fault leaks the exact value of one error coordinate
- *                    (Cayrel et al., Eurocrypt'21). We *run* the real ISD with
- *                    these applied, so this path is exact, not modelled.
+ * The two hint kinds this demo implements. BOTH come from Information-Set
+ * Decoding with Hints (Horlemann, Puchinger, Renner, Schamberger, Wachter-Zeh,
+ * ePrint 2021/279):
+ *  - 'perfect'     — a leak of the exact value of one error coordinate: that
+ *                    paper's "known error locations" hint. We *run* the real ISD
+ *                    with these applied, so this path is exact, not modelled.
  *  - 'approximate' — a side channel leaks a noisy Hamming-weight estimate over a
- *                    block of coordinates (ISD-with-Hints, ePrint 2021/279).
- *                    Recast as soft-decision info; its work saving is *modelled*.
+ *                    block of coordinates: that paper's known-subblock-weight
+ *                    hint. Recast as soft-decision info; its saving is *modelled*.
+ *
+ * A DIFFERENT hint channel exists and is deliberately not implemented here: the
+ * Cayrel et al. (Eurocrypt '21) fault attack suppresses the modular reduction so
+ * the attacker reads SYNDROME entries over the integers. Hint-ISD (ePrint
+ * 2026/341) calls those "perfect hints" too, but they reveal syndrome
+ * components, not error positions. See METHODOLOGY.md.
  */
 export type HintKind = 'perfect' | 'approximate';
 
 export interface PerfectHint {
   kind: 'perfect';
-  /** Which error coordinate this fault leaked. */
+  /** Which error coordinate this hint leaked. */
   index: number;
   /** Its exact value, 0 or 1. */
   value: 0 | 1;

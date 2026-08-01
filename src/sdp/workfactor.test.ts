@@ -9,7 +9,7 @@ import {
   sternWorkBits,
   workCurve,
 } from './workfactor';
-import { schemeContrast } from './schemes';
+import { SCHEMES, schemeContrast } from './schemes';
 
 describe('log2Binom', () => {
   it('matches exact small binomials', () => {
@@ -89,13 +89,33 @@ describe('Stern work model beats Prange on the toy instance', () => {
   });
 });
 
-describe('McEliece vs HQC error-weight finding', () => {
-  it('the low-weight scheme (HQC) needs fewer hints to reach poly time', () => {
+describe('the error-weight mechanism, on the toys', () => {
+  it('the lighter toy reaches poly time after fewer hints than the heavier toy', () => {
     const c = schemeContrast();
     const hqc = c.find((s) => s.id === 'hqc')!;
     const mce = c.find((s) => s.id === 'mceliece')!;
     expect(hqc.posture).toBe('fragile');
     expect(mce.posture).toBe('resistant');
+    expect(hqc.toyW).toBeLessThan(mce.toyW);
     expect(hqc.hintsToPoly).toBeLessThan(mce.hintsToPoly);
+  });
+
+  it('the bound ignores code length entirely — only absolute weight matters', () => {
+    // Two instances of weight 10, three orders of magnitude apart in n (relative
+    // weight 10% vs 0.01%). The bound cannot tell them apart, because n is not
+    // one of its inputs — hintsToPolynomial takes w and nothing else.
+    for (const w of [3, 6, 10, 64, 66]) expect(hintsToPolynomial(w)).toBe(w);
+    expect(hintsToPolynomial.length).toBe(1);
+    expect(hintsToPolynomial(3)).toBeLessThan(hintsToPolynomial(6));
+  });
+
+  it('does NOT separate the real Level-1 parameter sets — HQC needs more, not fewer', () => {
+    // Guards the prose: "low-weight schemes fall fastest" is false for this pair.
+    // mceliece348864 t=64 vs hqc-128 t=66, so the bound favours McEliece by two.
+    const hqc = SCHEMES.find((s) => s.id === 'hqc')!;
+    const mce = SCHEMES.find((s) => s.id === 'mceliece')!;
+    expect(hintsToPolynomial(hqc.realT)).toBeGreaterThan(hintsToPolynomial(mce.realT));
+    // Relative weight points the other way — it is not what the bound measures.
+    expect(hqc.realT / hqc.realN).toBeLessThan(mce.realT / mce.realN);
   });
 });
