@@ -206,7 +206,15 @@ function sectionPrimer(): HTMLElement {
   });
   matrixRegion.append(renderMatrix(MAIN));
 
-  const bitRow = el('div', { class: 'bit-row', 'aria-label': 'Candidate error vector — click a bit to flip it' });
+  // role="group": a plain div is role=generic, where `aria-label` is prohibited
+  // and silently discarded. These 48 toggles are one meaningful grouping, which
+  // is what `group` describes; the sibling row at the top of sectionAttack()
+  // already carries the same role for the same reason.
+  const bitRow = el('div', {
+    class: 'bit-row',
+    role: 'group',
+    'aria-label': 'Candidate error vector — click a bit to flip it',
+  });
   const cmp = el('p', { class: 'readout-line', role: 'status', 'aria-live': 'polite' });
 
   function refresh() {
@@ -519,8 +527,18 @@ function sectionAttack(): HTMLElement {
         cls = 'bit unknown';
         aria = `Position ${i}: unknown to the attacker`;
       }
+      // role="img", not a bare span. `aria-label` is PROHIBITED on the generic
+      // role a <span> maps to: the browser discards it and axe files it under
+      // aria-prohibited-attr in `incomplete`, never as a violation — so all 48
+      // of these labels reached nobody, and the cell read as a bare index plus
+      // a "?" or an unlocked-padlock emoji. Each cell genuinely IS a glyph
+      // standing for a state, which is what role="img" describes, and the name
+      // then replaces the index + glyph rather than competing with it.
       errorRow.append(
-        el('span', { class: cls, 'aria-label': aria }, [el('span', { class: 'idx' }, [String(i)]), glyph]),
+        el('span', { class: cls, role: 'img', 'aria-label': aria }, [
+          el('span', { class: 'idx' }, [String(i)]),
+          glyph,
+        ]),
       );
     }
 
@@ -620,7 +638,15 @@ function sectionAttack(): HTMLElement {
     el('div', { class: 'btn-row' }, [runBtn, runBothBtn, resetBtn]),
     result,
     el('h3', {}, ['Your runs (newest first)']),
-    el('div', { class: 'table-scroll' }, [runTable]),
+    // tabindex + role: .table-scroll is `overflow: auto` and a table holds
+    // nothing focusable, so at phone width this eight-column run log scrolled
+    // with no keyboard route at all (WCAG 2.1.1). role="region" is what makes
+    // the tab stop announce itself rather than arriving unnamed.
+    el(
+      'div',
+      { class: 'table-scroll', tabindex: '0', role: 'region', 'aria-label': 'Attack run log' },
+      [runTable],
+    ),
     el('p', { class: 'footnote' }, [
       'Each run is ',
       String(TRIALS),
@@ -697,7 +723,10 @@ function sectionCurve(): HTMLElement {
 
   const dataTable = el('details', { class: 'chart-data' }, [
     el('summary', {}, ['Chart data (model bits per hint, plus your measured medians)']),
-    el('div', { class: 'table-scroll' }, [
+    el(
+      'div',
+      { class: 'table-scroll', tabindex: '0', role: 'region', 'aria-label': 'Chart data table' },
+      [
       el('table', { class: 'readout' }, [
         el('caption', { class: 'visually-hidden' }, [
           'Modelled total work in bits for Prange and Stern at each hint count, and the median measured work from any runs you launched.',
@@ -714,7 +743,8 @@ function sectionCurve(): HTMLElement {
         ]),
         dataBody,
       ]),
-    ]),
+      ],
+    ),
   ]);
 
   return el('section', { class: 'card', 'aria-labelledby': 'curve-h' }, [
@@ -919,7 +949,13 @@ function sectionReference(): HTMLElement {
             el('code', {}, ['C(n,w) / C(r,w)']),
             ', so the guessing work in bits is:',
           ]),
-          el('pre', { class: 'formula' }, [el('code', {}, ['search_bits(n, r, w) = log2 C(n,w) − log2 C(r,w)'])]),
+          // Same WCAG 2.1.1 reason as the tables: .formula scrolls sideways
+          // at 380px and holds nothing focusable.
+          el(
+            'pre',
+            { class: 'formula', tabindex: '0', role: 'region', 'aria-label': 'Search-bits formula' },
+            [el('code', {}, ['search_bits(n, r, w) = log2 C(n,w) − log2 C(r,w)'])],
+          ),
           el('p', {}, [
             `For this demo's instance (n=${MAIN.n}, r=${MAIN.r}, w=${MAIN.w}) that is `,
             el('code', {}, [fmtBits(noHintExp)]),
@@ -936,9 +972,11 @@ function sectionReference(): HTMLElement {
             el('strong', {}, ['Stern']),
             ' amortises it over a birthday/collision search of the information set:',
           ]),
-          el('pre', { class: 'formula' }, [
-            el('code', {}, ['stern_iters = C(n,w) / [ C(k/2,p)·C(k/2,p)·C(r−ℓ, w−2p) ]']),
-          ]),
+          el(
+            'pre',
+            { class: 'formula', tabindex: '0', role: 'region', 'aria-label': 'Stern iterations formula' },
+            [el('code', {}, ['stern_iters = C(n,w) / [ C(k/2,p)·C(k/2,p)·C(r−ℓ, w−2p) ]'])],
+          ),
           (() => {
             const sp = bestSternParams({ n: MAIN.n, r: MAIN.r, w: MAIN.w });
             return el('p', {}, [
