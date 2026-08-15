@@ -363,6 +363,15 @@ code,
   font-size: 0.7rem;
   color: var(--accent-strong);
 }
+/* --accent-strong is authored to clear 4.5:1 on --panel, and this marker is the
+ * one place it does not sit on --panel: a SET bit fills with
+ * color-mix(--accent 26%, --panel-2), and on that tinted fill the light theme's
+ * #8a4f0a reaches only 4.35:1. Dark is unaffected — its accent-on-tint is well
+ * clear — so the correction is scoped to light rather than applied to the token,
+ * which is still right everywhere else it is used. */
+:root[data-theme="light"] .bit.set.support::after {
+  color: #6d3d05;
+}
 .bit[disabled] {
   cursor: default;
   opacity: 1;

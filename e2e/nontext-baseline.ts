@@ -21,8 +21,5 @@ export const NONTEXT_BASELINE: Record<
   "control-boundary|button#cl-theme-toggle.cl-btn.cl-icon": { ratio: 1.74, required: 3.0, unverified: false },
   "control-boundary|button.bit": { ratio: 1.34, required: 3.0, unverified: false },
   "control-boundary|button.btn": { ratio: 1.34, required: 3.0, unverified: false },
-  "control-boundary|button.preset": { ratio: 1.34, required: 3.0, unverified: false },
-  "generated-content|button.bit.set.support::after": { ratio: 4.35, required: 4.5, unverified: true },
-  "generated-content|span.bit.set.support.hint-known::after": { ratio: 4.35, required: 4.5, unverified: true },
-  "generated-content|span.bit.set.support::after": { ratio: 4.35, required: 4.5, unverified: true }
+  "control-boundary|button.preset": { ratio: 1.34, required: 3.0, unverified: false }
 };
