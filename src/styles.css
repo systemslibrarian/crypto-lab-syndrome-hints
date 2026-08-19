@@ -467,8 +467,15 @@ input[type="number"] {
 }
 
 /* --------------------------------------------------------- work meter ---- */
+/* The badge never shrinks, and its widest label — "BROKEN — polynomial time" —
+   is ~236px. On a one-line row that left the note a ~74px column at phone
+   width: narrower than the note's own longest word, so the note overflowed and
+   the document scrolled sideways (WCAG 1.4.10). Wrapping drops the note onto
+   its own full-width line once the two no longer fit side by side; its basis is
+   small enough that wider viewports keep the single row unchanged. */
 .meter {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.8rem;
   border: 1px solid var(--border);
@@ -506,6 +513,8 @@ input[type="number"] {
   background: color-mix(in oklab, var(--alarm) 16%, transparent);
 }
 .meter-text {
+  flex: 1 1 12rem;
+  min-width: 0;
   line-height: 1.35;
 }
 .meter-text strong {
