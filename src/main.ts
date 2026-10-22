@@ -891,7 +891,11 @@ function sectionCompare(): HTMLElement {
           'real: ',
           el('a', { href: scheme.sourceUrl, target: '_blank', rel: 'noopener noreferrer' }, [scheme.realParams]),
         ]),
-        el('p', { class: 'scheme-stat' }, [`n = `, el('b', {}, [scheme.realN.toLocaleString()]), `, error weight t = `, el('b', {}, [String(scheme.realT)])]),
+        el('p', { class: 'scheme-stat' }, [
+          'n = ', el('b', {}, [scheme.realN.toLocaleString()]),
+          scheme.id === 'hqc' ? ', secret-vector weight ω = ' : ', injected error weight t = ',
+          el('b', {}, [String(scheme.realWeight)]),
+        ]),
         el('p', { class: 'prose small' }, [scheme.blurb]),
         el('p', { class: 'scheme-stat' }, [
           `toy instance: n=${scheme.toy.n}, w=${scheme.toy.w} → hints to polynomial = `,
@@ -920,11 +924,11 @@ function sectionCompare(): HTMLElement {
       el('span', { class: 'tag tag-model' }, ['Adapted']),
       ' The real ',
       el('code', {}, ['n']),
-      ' and ',
-      el('code', {}, ['t']),
-      ' are quoted Level-1 facts; the toy weights are not scaled from them. Read literally at the real numbers, this demo’s bound gives 64 hints for McEliece and 66 for HQC — the two schemes have nearly the same ',
-      el('em', {}, ['absolute']),
-      ' error weight, so the bound does not separate them, and the toys exaggerate the gap on purpose so the mechanism stays visible. They differ instead in relative weight (t/n ≈ 1.8% vs 0.37%) and structure, which set the starting height of the curve rather than its hint budget. Which scheme Hint-ISD judges more hint-sensitive follows from its full analysis, which this browser demo does not reproduce.',
+      ' and weights are quoted Level-1 facts from different constructions: McEliece’s injected error has t = 64; ',
+      el('a', { href: 'https://pqc-hqc.org/doc/hqc_specifications_2026_10_12.pdf', target: '_blank', rel: 'noopener noreferrer' }, ['HQC-1’s 12 October 2026 specification, Table 8']),
+      ' gives the sparse secret vectors weight ω = 67. The toy weights are not scaled from them. Numerically the simplified bound would say 64 versus 67 informative support hints (three more for HQC), but it is ',
+      el('strong', {}, ['not a valid cross-scheme security comparison']),
+      ': HQC’s decoder sees a composite noise term, not an error of weight 67. The different structures and actual hint channels require the full analysis; the exaggerated toy gap only makes this one mechanism visible.',
     ]),
   ]);
 }
@@ -1043,9 +1047,9 @@ function sectionFaq(): HTMLElement {
       [
         'Not by this demo’s model, at the Level-1 parameters quoted here. The bound implemented is ',
         el('strong', {}, ['hints to polynomial = w']),
-        ', and the code length never enters it — so mceliece348864 (t = 64) and hqc-128 (t = 66) come out within 3% of each other, and if anything the model asks for two ',
+        ', and the code length never enters it — so plugging the quoted McEliece error weight t = 64 and HQC-1 secret-vector weight ω = 67 into this toy rule gives three ',
         el('em', {}, ['more']),
-        ' hints against HQC. Absolute error weight is the whole fragility axis: a lighter error does collapse sooner, which is exactly what the two toys (w = 6 vs w = 3) demonstrate. What t/n changes (1.8% vs 0.37%) is how much security the instance starts with, not how many hints end it. Hint-ISD’s full analysis does conclude that higher-weight schemes such as McEliece resist hint exposure better than smaller-weight ones such as HQC — but that follows from its complete estimator, which this browser demo does not reproduce.',
+        ' hints for HQC numerically. Those are different kinds of weight and do not rank their security: HQC’s effective decoding noise is composite. The two toys (w = 6 vs w = 3) show only that a lighter toy error needs fewer informative support hints. Hint-ISD’s full analysis reaches a broader conclusion, but this browser demo does not reproduce its estimator or attack the real parameter sets.',
       ],
     ],
     [

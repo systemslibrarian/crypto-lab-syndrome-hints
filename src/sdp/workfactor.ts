@@ -217,7 +217,8 @@ export function approxGainBits(blockSize: number, noiseBits: number): number {
  * function of the ABSOLUTE error weight alone, so a lighter error falls after
  * fewer hints and a heavier one resists. Relative weight t/n changes how hard
  * the instance is at zero hints, not how many hints end it — which is why this
- * bound does not separate mceliece348864 (t = 64) from hqc-128 (t = 66).
+ * Applying it to different published weights (McEliece error t = 64 versus
+ * HQC-1 secret-vector ω = 67) would not be a valid scheme-security ranking.
  */
 export function hintsToPolynomial(w: number): number {
   return w;

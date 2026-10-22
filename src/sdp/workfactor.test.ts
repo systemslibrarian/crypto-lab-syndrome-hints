@@ -104,18 +104,20 @@ describe('the error-weight mechanism, on the toys', () => {
     // Two instances of weight 10, three orders of magnitude apart in n (relative
     // weight 10% vs 0.01%). The bound cannot tell them apart, because n is not
     // one of its inputs — hintsToPolynomial takes w and nothing else.
-    for (const w of [3, 6, 10, 64, 66]) expect(hintsToPolynomial(w)).toBe(w);
+    for (const w of [3, 6, 10, 64, 67]) expect(hintsToPolynomial(w)).toBe(w);
     expect(hintsToPolynomial.length).toBe(1);
     expect(hintsToPolynomial(3)).toBeLessThan(hintsToPolynomial(6));
   });
 
-  it('does NOT separate the real Level-1 parameter sets — HQC needs more, not fewer', () => {
-    // Guards the prose: "low-weight schemes fall fastest" is false for this pair.
-    // mceliece348864 t=64 vs hqc-128 t=66, so the bound favours McEliece by two.
+  it('keeps dated HQC-1 support weight distinct from McEliece error weight', () => {
+    // HQC team spec 2026-10-12 Table 8: omega=67 for each secret vector x,y.
+    // McEliece t=64 is an injected error vector. This numerical toy rule is
+    // not a comparison of real attack costs or a common decoding radius.
     const hqc = SCHEMES.find((s) => s.id === 'hqc')!;
     const mce = SCHEMES.find((s) => s.id === 'mceliece')!;
-    expect(hintsToPolynomial(hqc.realT)).toBeGreaterThan(hintsToPolynomial(mce.realT));
-    // Relative weight points the other way — it is not what the bound measures.
-    expect(hqc.realT / hqc.realN).toBeLessThan(mce.realT / mce.realN);
+    expect(hqc.realWeight).toBe(67);
+    expect(mce.realWeight).toBe(64);
+    expect(hintsToPolynomial(hqc.realWeight) - hintsToPolynomial(mce.realWeight)).toBe(3);
+    expect(hqc.sourceUrl).toContain('hqc_specifications_2026_10_12.pdf');
   });
 });

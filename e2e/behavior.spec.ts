@@ -72,3 +72,12 @@ test('no horizontal overflow at a 375px phone width', async ({ page }) => {
   );
   expect(overflow).toBeLessThanOrEqual(1);
 });
+
+test('HQC comparison identifies the updated parameter and the toy-model limit', async ({ page }) => {
+  const comparison = page.locator('#compare-h').locator('..');
+  await expect(comparison).toContainText('secret-vector weight ω = 67');
+  await expect(comparison).toContainText('injected error weight t = 64');
+  await expect(comparison).toContainText('three more for HQC');
+  await expect(comparison).toContainText('not a valid cross-scheme security comparison');
+  await expect(comparison.locator('a[href="https://pqc-hqc.org/doc/hqc_specifications_2026_10_12.pdf"]')).toHaveCount(2);
+});

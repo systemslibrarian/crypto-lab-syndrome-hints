@@ -79,10 +79,14 @@ This demo makes that concrete:
 4. **Approximate hints (model)** — the soft-decision recasting of a noisy
    Hamming-weight leak, with a noise slider and the information-gain formula.
 5. **McEliece vs HQC** — the error-weight *mechanism* on two toys: a lower-weight
-   error reaches polynomial time after fewer support hints, and the code length
-   does not enter the bound at all. Illustrative, not a scaled model of the real
-   schemes — at the quoted Level-1 parameters the bound gives McEliece 64 hints
-   and HQC 66, so it does not separate them.
+   error reaches polynomial time after fewer informative support hints, and the
+   code length does not enter this bound. Illustrative, not a scaled model of
+   the real schemes. McEliece's quoted Level-1 injected error has weight `t=64`;
+   the [HQC team's 12 October 2026 specification, Table 8](https://pqc-hqc.org/doc/hqc_specifications_2026_10_12.pdf)
+   sets each HQC-1 sparse *secret vector* to `ω=67`, up from 66. Substitution
+   into the toy rule produces 64 versus 67 hints, but these weights have
+   different roles: HQC's decoder sees `x·r₂ − r₁·y + e`, not an error of weight
+   67. The browser result is not a real-scheme security ranking.
 6. **Reference** — the exact Prange and Stern work-factor formulas, the explicit
    hint-count-to-polynomial bound (`≈ w`), and the sources. See also
    [METHODOLOGY.md](METHODOLOGY.md) for the full claim → source → code → test → UI

@@ -8,15 +8,15 @@
 // model "hint-fragile" means exactly "small t", and a lighter error reaches
 // polynomial time after fewer support hints than a heavier one.
 //
-// Applied to the real Level-1 parameter sets below, that bound does NOT
-// separate the two schemes: mceliece348864 has t = 64 and hqc-128 has t = 66,
-// so the model asks for two MORE hints against HQC, not fewer. Their relative
-// weights differ sharply (t/n ≈ 1.8% vs 0.37%), but relative weight sets how
-// hard the instance is with zero hints, not how many hints end it.
+// Quoted Level-1 weights do NOT validate a real-scheme comparison under this
+// toy bound: mceliece348864 injects an error of weight t = 64, while HQC-1's
+// sparse private vectors x and y each have weight ω = 67 (2026-10-12 spec).
+// Applying hintsToPolynomial numerically gives 64 vs 67, but the weights have
+// different roles and the actual HQC decoding noise is x·r2 - r1·y + e.
 //
 // The two toys below are therefore set at two visibly different weights (w = 6
 // and w = 3) to make the weight→hints mechanism legible. Those toy weights are
-// a teaching choice; they are not scaled from t = 64 and t = 66, and nothing
+// a teaching choice; they are not scaled from the quoted 64 and 67, and nothing
 // about which scheme resists hint exposure in practice follows from them.
 // Hint-ISD (ePrint 2026/341) does conclude that higher-weight schemes such as
 // McEliece resist hint exposure better than smaller-weight ones such as HQC,
@@ -38,8 +38,8 @@ export interface SchemeFacts {
   sourceUrl: string;
   /** Real code length n (fact, not run in-browser). */
   realN: number;
-  /** Real decoding error weight t (fact). */
-  realT: number;
+  /** A quoted sparse-vector weight from each distinct scheme, not a common attack parameter. */
+  realWeight: number;
   /**
    * Which end of the TOY hint axis this scheme's toy sits at. A property of the
    * toy, not a ranking of the real schemes — see the header comment.
@@ -61,7 +61,7 @@ export const SCHEMES: SchemeFacts[] = [
     realParams: 'mceliece348864 (NIST Level 1)',
     sourceUrl: 'https://classic.mceliece.org/',
     realN: 3488,
-    realT: 64,
+    realWeight: 64,
     posture: 'resistant',
     blurb:
       'Real McEliece decodes a fixed-weight error of t = 64 in a length-3488 code (relative weight ≈ 1.8%). Its toy is set at the HEAVIER end of the mechanism (w = 6): a heavier error needs more support hints before its search collapses. That toy weight is a teaching choice, not a scaling of t = 64.',
@@ -70,13 +70,13 @@ export const SCHEMES: SchemeFacts[] = [
   {
     id: 'hqc',
     name: 'HQC',
-    realParams: 'hqc-128 (NIST Level 1)',
-    sourceUrl: 'https://pqc-hqc.org/',
+    realParams: 'HQC-1 (NIST Level 1)',
+    sourceUrl: 'https://pqc-hqc.org/doc/hqc_specifications_2026_10_12.pdf',
     realN: 17_669,
-    realT: 66,
+    realWeight: 67,
     posture: 'fragile',
     blurb:
-      'Real HQC decodes t = 66 errors in a length-17669 code — almost the same ABSOLUTE weight as McEliece, in a code five times longer (relative weight ≈ 0.37%). Its toy is set at the LIGHTER end of the mechanism (w = 3): a lighter error reaches polynomial time after fewer support hints. That toy weight is a teaching choice, not a scaling of t = 66.',
+      'HQC-1’s 12 October 2026 specification sets each sparse secret vector x and y to weight ω = 67 in dimension n = 17,669 (ω/n ≈ 0.38%). This is not the decoder’s error-correction radius: the noise being decoded includes x·r2 − r1·y + e. Its lighter toy (w = 3) illustrates the generic support-hint mechanism, not a scaled HQC attack or an HQC security estimate.',
     toy: { n: 26, k: 18, w: 3, seed: 0x4c },
   },
 ];
@@ -93,7 +93,7 @@ export interface SchemeContrast {
 /**
  * The comparison the panel renders, computed on the TOY weights: fewer
  * hints-to-poly ⇒ the toy collapses sooner. Deliberately not computed on
- * `realT` — there the bound gives 64 vs 66 and separates nothing.
+ * the quoted real weights — 64 and 67 play different roles in these schemes.
  */
 export function schemeContrast(): SchemeContrast[] {
   return SCHEMES.map((s) => ({
