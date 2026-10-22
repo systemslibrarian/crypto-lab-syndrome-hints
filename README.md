@@ -103,7 +103,8 @@ This demo makes that concrete:
 <https://systemslibrarian.github.io/crypto-lab-syndrome-hints/>
 
 Drag the hint slider, run the real attack, and compare the measured red dot to the
-modelled orange curve. Toggle the theme in the top bar; both are AA-accessible.
+modelled orange curve. The dark interface is covered by the AA accessibility
+gate at both desktop and phone widths.
 
 ## What Can Go Wrong
 
@@ -136,7 +137,7 @@ npm install
 npm run dev        # http://localhost:5173
 npm test           # Vitest unit tests + spec KATs
 npm run build      # tsc --noEmit && vite build
-npm run test:a11y  # axe-core WCAG gate on the production build, both themes
+npm run test:a11y  # browser claims + axe-core WCAG gate, dark theme at two widths
 ```
 
 ## Related Demos
@@ -148,7 +149,7 @@ npm run test:a11y  # axe-core WCAG gate on the production build, both themes
 
 ## Build & Verify
 
-- **Unit tests:** 60 Vitest tests across `src/sdp/*.test.ts`, run in CI before every
+- **Unit tests:** 62 Vitest tests across `src/sdp/*.test.ts`, run in CI before every
   deploy. This includes **16 spec known-answer tests** for the [7,4] Hamming code:
   9 syndrome KATs (`src/sdp/instance.test.ts`) — every single-bit error has syndrome
   equal to its position's binary value, plus zero-syndrome and XOR-linearity — and
@@ -174,8 +175,9 @@ npm run test:a11y  # axe-core WCAG gate on the production build, both themes
 - **Implemented algorithms:** Prange and Stern only. MMT and BJMM are named as
   further ISD refinements but are not implemented.
 - **Accessibility gate:** `@axe-core/playwright` scans the production build for zero
-  WCAG 2.1 A/AA violations in **both** themes; it drives every panel into its
-  post-interaction state (both solvers, the run table, the attacker/planted views,
+  WCAG 2.1 A/AA violations in the supported **dark** theme at desktop and phone
+  widths; it drives every panel into its post-interaction state (both solvers,
+  the run table, the attacker/planted views,
   all details) first. The GitHub Pages deploy is blocked on any violation.
 
 ## Performance
