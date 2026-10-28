@@ -4,7 +4,7 @@ import { boot, driveAllStates, expectBaselineNotStale, NARROW } from './gate';
 /**
  * WCAG A/AA regression gate for Syndrome Hints.
  *
- * Twenty-three states per theme at desktop and phone width: every meter
+ * Twenty-three dark-theme states at desktop and phone width: every meter
  * palette the hint slider produces rather than only the parked maximum, both
  * solvers run for real, the comparative run, the run log reset to its empty
  * rendering, both attacker/omniscient views of the error vector, the

@@ -3,7 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Strict a11y (axe-core) gate. Serves the production build via `vite preview`
  * on a unique port (4327 — chosen not to collide with any sibling lab's
- * playwright.config.ts), then scans both themes with WCAG 2.0/2.1 A + AA rules.
+ * playwright.config.ts), then scans the supported dark theme with WCAG
+ * 2.0/2.1 A + AA rules at desktop and phone widths.
  * The base path must match vite.config.ts (`/crypto-lab-syndrome-hints/`).
  */
 const PORT = 4327;
