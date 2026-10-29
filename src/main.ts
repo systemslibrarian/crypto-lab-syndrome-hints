@@ -228,7 +228,12 @@ function sectionPrimer(): HTMLElement {
           type: 'button',
           class: `bit${set ? ' set' : ''}${isSupport ? ' support' : ''}`,
           'aria-pressed': String(set),
-          'aria-label': `Position ${i}, currently ${set ? '1' : '0'}${isSupport ? ', part of the true error' : ''}`,
+          // The cell shows its index and then its bit, so the name opens with
+          // exactly that pair: axe 4.14 compares the accessible name against
+          // what a SIGHTED user sees (label-content-name-mismatch, WCAG 2.5.3
+          // Label in Name), and "Position 0, currently 1" does not contain the
+          // "01" the cell renders.
+          'aria-label': `${i}${set ? '1' : '0'}: position ${i}, currently ${set ? '1' : '0'}${isSupport ? ', part of the true error' : ''}`,
         },
         [el('span', { class: 'idx' }, [String(i)]), set ? '1' : '0'],
       );
