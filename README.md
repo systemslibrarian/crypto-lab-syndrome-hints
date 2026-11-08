@@ -112,8 +112,11 @@ gate at both desktop and phone widths.
 
 ## What Can Go Wrong
 
-- **Reading it as a break.** With zero hints the search is fully exponential — the
-  schemes are sound. This is *leakage-assisted* decoding.
+- **Reading it as a break or a security proof.** This toy demonstrates
+  *leakage-assisted* decoding, not a break or a security proof of Classic McEliece
+  or HQC. With no hints, it returns to baseline decoding search. Preventing the
+  modeled leakage addresses this channel; other attacks and implementation
+  assumptions require separate analysis.
 - **Over-trusting a single run.** One ISD run is a random draw around the expected
   work; the demo averages several so the measured dot sits near the curve, and it
   says so.
