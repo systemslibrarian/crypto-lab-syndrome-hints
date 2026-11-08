@@ -1037,7 +1037,7 @@ function sectionFaq(): HTMLElement {
   const qa: [string, (Node | string)[]][] = [
     [
       'Does this break Classic McEliece or HQC?',
-      ['No. With no hints the search is fully exponential — the schemes are sound. This shows what happens ', el('em', {}, ['when a fault or side channel leaks part of the secret']), '; the fix is to prevent the leakage, not to change the math.'],
+      ['No. This toy demonstrates leakage-assisted decoding, not a break or a security proof of Classic McEliece or HQC. With no hints, the toy returns to baseline decoding search. Preventing the modeled leakage addresses this channel; other attacks and implementation assumptions require separate analysis.'],
     ],
     [
       'Is the attack real or a simulation?',
