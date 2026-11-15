@@ -14,8 +14,24 @@ collapses; the attack actually runs and verifies its answer.
 Code-based post-quantum schemes (**Classic McEliece**, **HQC**) rest on the
 **syndrome-decoding problem (SDP)**: given a public parity-check matrix `H` and a
 syndrome `s = H·e`, recover the low-weight error vector `e`. With no side
-information the best known attacks (the **ISD** family — Prange, Stern, MMT,
-BJMM) cost exponential time.
+information the best known generic attacks (the **ISD** family — Prange, Stern,
+MMT, BJMM) cost exponential time.
+
+**Research update (15 November 2026):** [Ghoshal, Ishai, Jain and Sun, ePrint
+2026/1630](https://eprint.iacr.org/2026/1630) present a classical
+quasipolynomial-time distinguisher that separates a Goppa–McEliece public key
+from a uniformly random one, applying to all Classic McEliece parameter sets
+considered in the NIST process, and extend it to heuristic ciphertext-decryption
+and key-recovery attacks; the authors describe the distinguisher's concrete
+estimates as improved but not yet practical, while noting the key-recovery attack
+may be relevant to NIST security levels: its preliminary estimates, under the
+binary-operations metric, remain close to NIST's baseline security target and
+fall strictly below the corresponding targets for the highest-security parameter
+sets. That is structural cryptanalysis of the hidden Goppa code, a different
+attack path from the generic decoding modelled here: neither the hint slider nor
+the work-factor curves address it, and it changes none of them. The curves are
+ISD-only models on a toy instance, not an overall security verdict for Classic
+McEliece or HQC.
 
 The **Hint-ISD** result (D'Achille, Esser, Kraus, ePrint 2026/341) asks what
 happens when the secret error partially leaks — through a **fault** or a **side
@@ -42,7 +58,7 @@ components are not error positions, and this demo neither leaks nor models them.
 > Treat that bound and the McEliece-vs-HQC panel as illustrations of the
 > *mechanism*, not reproductions of the paper's quantitative results.
 
-The best-known classical attacks form the **ISD family** — of which **Prange**
+The best-known generic classical attacks form the **ISD family** — of which **Prange**
 and **Stern** are implemented here as two selectable real solvers, while **MMT**
 and **BJMM** are named as further refinements but are *not* implemented.
 

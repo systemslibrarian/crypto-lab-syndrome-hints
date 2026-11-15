@@ -183,7 +183,7 @@ function sectionIntro(): HTMLElement {
     el('p', { class: 'lede' }, [
       'Some of the post-quantum encryption the world is standardising — Classic McEliece, HQC — is safe only because one specific puzzle is hard to solve: given a secret pattern of errors scrambled into a short “syndrome,” find the errors. That puzzle is called ',
       el('strong', {}, ['syndrome decoding']),
-      ', and with no extra information the best known attack takes exponential time.',
+      ', and with no extra information the best known generic attack takes exponential time.',
     ]),
     el('p', { class: 'prose' }, [
       'But attackers do not always start from zero. A glitched chip or a power-consumption trace can ',
